@@ -1,5 +1,5 @@
 /**
- * Slack Patch Options Page
+ * Slack Message Patch Options Page
  * 設定画面のロジック
  */
 

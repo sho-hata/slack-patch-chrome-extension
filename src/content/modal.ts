@@ -1,5 +1,5 @@
 /**
- * Slack Patch モーダルUI
+ * Slack Message Patch モーダルUI
  * Shadow DOMを使用してSlackのCSSと隔離
  */
 
@@ -162,7 +162,7 @@ export class SlackPatchModal {
 
     const title = document.createElement('h2');
     title.className = 'slack-patch-title';
-    title.textContent = 'Slack Patch';
+    title.textContent = 'Slack Message Patch';
 
     const actions = document.createElement('div');
     actions.className = 'slack-patch-header-actions';

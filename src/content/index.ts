@@ -1,5 +1,5 @@
 /**
- * Slack Patch Content Script
+ * Slack Message Patch Content Script
  * Slackページに注入され、ショートカット検出とモーダル制御を行う
  */
 
@@ -39,7 +39,7 @@ const initialize = (): void => {
   if (initialized) return;
   initialized = true;
 
-  console.log('[Slack Patch] Initialized');
+  console.log('[Slack Message Patch] Initialized');
 
   // キーボードショートカットのリスナーを登録
   document.addEventListener('keydown', handleKeyDown, true);
@@ -115,7 +115,7 @@ const handleKeyDown = (event: KeyboardEvent): void => {
 const startProofreadFlow = async (originalText: string): Promise<void> => {
   // コンテキストチェック
   if (!isExtensionContextValid()) {
-    console.warn('[Slack Patch] Extension context invalidated. Please reload the page.');
+    console.warn('[Slack Message Patch] Extension context invalidated. Please reload the page.');
     return;
   }
 
@@ -138,7 +138,7 @@ const startProofreadFlow = async (originalText: string): Promise<void> => {
     // 添削リクエストを送信
     requestProofread(originalText);
   } catch (error) {
-    console.error('[Slack Patch] Failed to start proofread flow:', error);
+    console.error('[Slack Message Patch] Failed to start proofread flow:', error);
   }
 };
 

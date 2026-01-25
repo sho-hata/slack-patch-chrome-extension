@@ -1,4 +1,4 @@
-# Slack Patch
+# Slack Message Patch
 
 Web版Slackで送信前メッセージをLLMで添削し、Before/After比較のポップアップで編集・送信できるChrome拡張機能です。
 
