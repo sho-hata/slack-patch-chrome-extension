@@ -66,8 +66,7 @@ export const findActiveInputField = (): HTMLElement | null => {
  */
 const isValidInputField = (element: HTMLElement): boolean => {
   return (
-    element.getAttribute('contenteditable') === 'true' &&
-    !element.closest('[aria-hidden="true"]')
+    element.getAttribute('contenteditable') === 'true' && !element.closest('[aria-hidden="true"]')
   );
 };
 
@@ -76,11 +75,7 @@ const isValidInputField = (element: HTMLElement): boolean => {
  */
 const isVisible = (element: HTMLElement): boolean => {
   const style = window.getComputedStyle(element);
-  return (
-    style.display !== 'none' &&
-    style.visibility !== 'hidden' &&
-    style.opacity !== '0'
-  );
+  return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
 };
 
 /**
@@ -121,9 +116,7 @@ const extractTextWithFormatting = (node: Node): string => {
     const tag = el.tagName;
 
     // 子要素を再帰的に処理
-    const inner = Array.from(el.childNodes)
-      .map(extractTextWithFormatting)
-      .join('');
+    const inner = Array.from(el.childNodes).map(extractTextWithFormatting).join('');
 
     // フォーマット変換
     switch (tag) {
@@ -264,7 +257,7 @@ const findEarliestMatch = (text: string): PatternMatch | null => {
 
   // 最も早いマッチを返す
   return matches.reduce((earliest, current) =>
-    current.index < earliest.index ? current : earliest,
+    current.index < earliest.index ? current : earliest
   );
 };
 
@@ -283,9 +276,7 @@ const parseSlackMarkdownLine = (line: string): DocumentFragment => {
     if (earliestMatch) {
       // マッチ前のテキストを追加
       if (earliestMatch.index > 0) {
-        fragment.appendChild(
-          document.createTextNode(remaining.substring(0, earliestMatch.index)),
-        );
+        fragment.appendChild(document.createTextNode(remaining.substring(0, earliestMatch.index)));
       }
 
       // フォーマット要素を作成
@@ -297,9 +288,7 @@ const parseSlackMarkdownLine = (line: string): DocumentFragment => {
       fragment.appendChild(el);
 
       // 残りを更新
-      remaining = remaining.substring(
-        earliestMatch.index + earliestMatch.length,
-      );
+      remaining = remaining.substring(earliestMatch.index + earliestMatch.length);
     } else {
       // マッチがなければ残り全部をテキストとして追加
       fragment.appendChild(document.createTextNode(remaining));
@@ -365,10 +354,7 @@ const processInlineText = (text: string, fragment: DocumentFragment): void => {
 /**
  * 入力欄にテキストを設定（Slackマークダウン対応）
  */
-export const setInputText = (
-  text: string,
-  inputField?: HTMLElement | null,
-): boolean => {
+export const setInputText = (text: string, inputField?: HTMLElement | null): boolean => {
   const field = inputField || findActiveInputField();
   if (!field) return false;
 
@@ -403,7 +389,7 @@ const dispatchInputEvents = (element: HTMLElement): void => {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
-    }),
+    })
   );
 
   // beforeinput イベント
@@ -412,7 +398,7 @@ const dispatchInputEvents = (element: HTMLElement): void => {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
-    }),
+    })
   );
 
   // change イベント
@@ -420,7 +406,7 @@ const dispatchInputEvents = (element: HTMLElement): void => {
     new Event('change', {
       bubbles: true,
       cancelable: true,
-    }),
+    })
   );
 };
 
@@ -496,7 +482,7 @@ const findSendButton = (inputField: HTMLElement): HTMLElement | null => {
  * 入力欄が再生成された場合に対応
  */
 export const observeInputField = (
-  callback: (inputField: HTMLElement) => void,
+  callback: (inputField: HTMLElement) => void
 ): MutationObserver => {
   const observer = new MutationObserver(() => {
     const inputField = findActiveInputField();
