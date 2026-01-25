@@ -1,57 +1,57 @@
 // プロンプトプリセット
-export interface Preset {
+export type Preset = {
   id: string;
   name: string;
   systemPrompt: string;
   userPromptTemplate: string;
-}
+};
 
 // ストレージデータ構造
-export interface StorageData {
+export type StorageData = {
   apiKey: string;
   model: string;
   presets: Preset[];
   activePresetId: string;
-}
+};
 
 // Content Script → Service Worker メッセージ
 export type MessageType = 'PROOFREAD' | 'GET_SETTINGS';
 
-export interface ProofreadRequest {
+export type ProofreadRequest = {
   type: 'PROOFREAD';
   text: string;
   presetId?: string;
-}
+};
 
-export interface GetSettingsRequest {
+export type GetSettingsRequest = {
   type: 'GET_SETTINGS';
-}
+};
 
 export type ExtensionMessage = ProofreadRequest | GetSettingsRequest;
 
 // Service Worker → Content Script レスポンス
-export interface ProofreadSuccessResponse {
+export type ProofreadSuccessResponse = {
   success: true;
   proofreadText: string;
-}
+};
 
-export interface ProofreadErrorResponse {
+export type ProofreadErrorResponse = {
   success: false;
   error: string;
   errorType: 'AUTH_ERROR' | 'RATE_LIMIT' | 'SERVER_ERROR' | 'NETWORK_ERROR' | 'NO_API_KEY';
-}
+};
 
 export type ProofreadResponse = ProofreadSuccessResponse | ProofreadErrorResponse;
 
-export interface SettingsResponse {
+export type SettingsResponse = {
   settings: StorageData;
-}
+};
 
 // モーダルの状態
 export type ModalState = 'loading' | 'ready' | 'error' | 'sending';
 
 // OpenAI API レスポンス型
-export interface OpenAIChatCompletionResponse {
+export type OpenAIChatCompletionResponse = {
   id: string;
   object: string;
   created: number;
@@ -69,4 +69,4 @@ export interface OpenAIChatCompletionResponse {
     completion_tokens: number;
     total_tokens: number;
   };
-}
+};

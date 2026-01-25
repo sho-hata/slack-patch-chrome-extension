@@ -1,4 +1,4 @@
-import type { StorageData, Preset } from '@/types';
+import type { Preset, StorageData } from '@/types';
 import { DEFAULT_STORAGE_DATA, STORAGE_KEY } from './constants';
 
 // ストレージからデータを取得
@@ -23,7 +23,7 @@ export async function getStorageData(): Promise<StorageData> {
 export async function setStorageData(data: Partial<StorageData>): Promise<void> {
   const current = await getStorageData();
   const updated = { ...current, ...data };
-  
+
   return new Promise((resolve) => {
     chrome.storage.local.set({ [STORAGE_KEY]: updated }, () => {
       resolve();
@@ -69,9 +69,7 @@ export async function addPreset(preset: Preset): Promise<void> {
 // プリセットを更新
 export async function updatePreset(presetId: string, updates: Partial<Preset>): Promise<void> {
   const data = await getStorageData();
-  const presets = data.presets.map((p) =>
-    p.id === presetId ? { ...p, ...updates } : p
-  );
+  const presets = data.presets.map((p) => (p.id === presetId ? { ...p, ...updates } : p));
   await setStorageData({ presets });
 }
 
@@ -79,17 +77,17 @@ export async function updatePreset(presetId: string, updates: Partial<Preset>): 
 export async function deletePreset(presetId: string): Promise<void> {
   const data = await getStorageData();
   const presets = data.presets.filter((p) => p.id !== presetId);
-  
+
   // 削除対象がアクティブなプリセットの場合、最初のプリセットをアクティブに
   let activePresetId = data.activePresetId;
   if (activePresetId === presetId && presets.length > 0) {
     activePresetId = presets[0].id;
   }
-  
+
   await setStorageData({ presets, activePresetId });
 }
 
 // UUIDを生成（プリセットID用）
-export function generateId(): string {
+export const generateId = (): string => {
   return crypto.randomUUID();
-}
+};

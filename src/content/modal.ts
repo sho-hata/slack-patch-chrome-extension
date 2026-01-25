@@ -6,33 +6,33 @@
 import type { ModalState, Preset, StorageData } from '@/types';
 import styles from './styles.css?inline';
 
-export interface ModalCallbacks {
+export type ModalCallbacks = {
   onSend: (text: string) => void;
   onCancel: () => void;
   onRetry: () => void;
   onPresetChange: (presetId: string) => void;
-}
+};
 
 export class SlackPatchModal {
   private container: HTMLDivElement;
   private shadowRoot: ShadowRoot;
   private state: ModalState = 'loading';
-  private originalText: string = '';
-  private proofreadText: string = '';
-  private errorMessage: string = '';
+  private originalText = '';
+  private proofreadText = '';
+  private errorMessage = '';
   private callbacks: ModalCallbacks;
   private presets: Preset[] = [];
-  private activePresetId: string = '';
+  private activePresetId = '';
   private afterTextarea: HTMLTextAreaElement | null = null;
 
   constructor(callbacks: ModalCallbacks) {
     this.callbacks = callbacks;
-    
+
     // Shadow DOM用のコンテナを作成
     this.container = document.createElement('div');
     this.container.id = 'slack-patch-modal-root';
     this.shadowRoot = this.container.attachShadow({ mode: 'closed' });
-    
+
     // スタイルを注入
     const styleElement = document.createElement('style');
     styleElement.textContent = styles;
@@ -47,10 +47,10 @@ export class SlackPatchModal {
     this.presets = settings.presets;
     this.activePresetId = settings.activePresetId;
     this.state = 'loading';
-    
+
     document.body.appendChild(this.container);
     this.render();
-    
+
     // Escキーでクローズ
     document.addEventListener('keydown', this.handleKeyDown);
   }
@@ -80,7 +80,7 @@ export class SlackPatchModal {
     this.proofreadText = proofreadText;
     this.state = 'ready';
     this.render();
-    
+
     // テキストエリアにフォーカス
     setTimeout(() => {
       this.afterTextarea?.focus();
@@ -171,14 +171,14 @@ export class SlackPatchModal {
     const presetSelect = document.createElement('select');
     presetSelect.className = 'slack-patch-preset-select';
     presetSelect.disabled = this.state === 'loading' || this.state === 'sending';
-    
-    this.presets.forEach(preset => {
+
+    for (const preset of this.presets) {
       const option = document.createElement('option');
       option.value = preset.id;
       option.textContent = preset.name;
       option.selected = preset.id === this.activePresetId;
       presetSelect.appendChild(option);
-    });
+    }
 
     presetSelect.addEventListener('change', () => {
       this.activePresetId = presetSelect.value;
@@ -218,7 +218,7 @@ export class SlackPatchModal {
         `;
         break;
 
-      case 'error':
+      case 'error': {
         content.innerHTML = `
           <div class="slack-patch-error" style="grid-column: 1 / -1;">
             <div class="slack-patch-error-icon">!</div>
@@ -229,32 +229,33 @@ export class SlackPatchModal {
         const retryBtn = content.querySelector('.slack-patch-btn-retry');
         retryBtn?.addEventListener('click', () => this.callbacks.onRetry());
         break;
+      }
 
       case 'ready':
-      case 'sending':
+      case 'sending': {
         // Before パネル
         const beforePanel = document.createElement('div');
         beforePanel.className = 'slack-patch-panel';
-        
+
         const beforeLabel = document.createElement('div');
         beforeLabel.className = 'slack-patch-panel-label';
         beforeLabel.textContent = '送信前 (Before)';
-        
+
         const beforeText = document.createElement('div');
         beforeText.className = 'slack-patch-text-before';
         beforeText.textContent = this.originalText;
-        
+
         beforePanel.appendChild(beforeLabel);
         beforePanel.appendChild(beforeText);
 
         // After パネル
         const afterPanel = document.createElement('div');
         afterPanel.className = 'slack-patch-panel';
-        
+
         const afterLabel = document.createElement('div');
         afterLabel.className = 'slack-patch-panel-label';
         afterLabel.textContent = '添削後 (After)';
-        
+
         this.afterTextarea = document.createElement('textarea');
         this.afterTextarea.className = 'slack-patch-text-after';
         this.afterTextarea.value = this.proofreadText;
@@ -262,13 +263,14 @@ export class SlackPatchModal {
         this.afterTextarea.addEventListener('input', (e) => {
           this.proofreadText = (e.target as HTMLTextAreaElement).value;
         });
-        
+
         afterPanel.appendChild(afterLabel);
         afterPanel.appendChild(this.afterTextarea);
 
         content.appendChild(beforePanel);
         content.appendChild(afterPanel);
         break;
+      }
     }
 
     return content;
@@ -284,7 +286,7 @@ export class SlackPatchModal {
     // ステータス
     const status = document.createElement('div');
     status.className = 'slack-patch-status';
-    
+
     if (this.state === 'sending') {
       status.textContent = '送信中...';
     }
@@ -336,7 +338,7 @@ export class SlackPatchModal {
     const focusableElements = modal.querySelectorAll<HTMLElement>(
       'button:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
-    
+
     if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];

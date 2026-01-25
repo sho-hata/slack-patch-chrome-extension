@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { crx } from '@crxjs/vite-plugin';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
 import manifest from './manifest.json';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));

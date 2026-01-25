@@ -4,15 +4,15 @@
  */
 
 import type { Preset, StorageData } from '@/types';
+import { AVAILABLE_MODELS, DEFAULT_PRESETS } from '@/utils/constants';
 import {
-  getStorageData,
-  setStorageData,
   addPreset,
-  updatePreset,
   deletePreset,
   generateId,
+  getStorageData,
+  setStorageData,
+  updatePreset,
 } from '@/utils/storage';
-import { AVAILABLE_MODELS, DEFAULT_PRESETS } from '@/utils/constants';
 
 // DOM要素
 let apiKeyInput: HTMLInputElement;
@@ -69,19 +69,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * モデル選択肢を生成
  */
-function populateModelSelect(): void {
-  AVAILABLE_MODELS.forEach((model) => {
+const populateModelSelect = (): void => {
+  for (const model of AVAILABLE_MODELS) {
     const option = document.createElement('option');
     option.value = model.id;
     option.textContent = model.name;
     modelSelect.appendChild(option);
-  });
-}
+  }
+};
 
 /**
  * 設定を読み込んでUIに反映
  */
-async function loadSettings(): Promise<void> {
+const loadSettings = async (): Promise<void> => {
   currentSettings = await getStorageData();
 
   // API Key
@@ -93,15 +93,15 @@ async function loadSettings(): Promise<void> {
   // プリセット
   renderPresetList();
   updateActivePresetSelect();
-}
+};
 
 /**
  * プリセットリストをレンダリング
  */
-function renderPresetList(): void {
+const renderPresetList = (): void => {
   presetList.innerHTML = '';
 
-  currentSettings.presets.forEach((preset) => {
+  for (const preset of currentSettings.presets) {
     const item = document.createElement('div');
     item.className = 'preset-item';
     item.innerHTML = `
@@ -114,36 +114,36 @@ function renderPresetList(): void {
       </div>
     `;
     presetList.appendChild(item);
-  });
+  }
 
   // 編集ボタンのイベントリスナー
-  presetList.querySelectorAll('.edit-preset').forEach((btn) => {
+  for (const btn of presetList.querySelectorAll('.edit-preset')) {
     btn.addEventListener('click', (e) => {
       const id = (e.currentTarget as HTMLButtonElement).dataset.id!;
       openPresetModal(id);
     });
-  });
-}
+  }
+};
 
 /**
  * アクティブプリセット選択を更新
  */
-function updateActivePresetSelect(): void {
+const updateActivePresetSelect = (): void => {
   activePresetSelect.innerHTML = '';
-  
-  currentSettings.presets.forEach((preset) => {
+
+  for (const preset of currentSettings.presets) {
     const option = document.createElement('option');
     option.value = preset.id;
     option.textContent = preset.name;
     option.selected = preset.id === currentSettings.activePresetId;
     activePresetSelect.appendChild(option);
-  });
-}
+  }
+};
 
 /**
  * イベントリスナーを設定
  */
-function setupEventListeners(): void {
+const setupEventListeners = (): void => {
   // API Key 表示/非表示
   toggleApiKeyBtn.addEventListener('click', () => {
     const isPassword = apiKeyInput.type === 'password';
@@ -197,15 +197,13 @@ function setupEventListeners(): void {
       closePresetModal();
     }
   });
-}
+};
 
 /**
  * プリセットモーダルを開く
  */
-function openPresetModal(presetId?: string): void {
-  const preset = presetId
-    ? currentSettings.presets.find((p) => p.id === presetId)
-    : null;
+const openPresetModal = (presetId?: string): void => {
+  const preset = presetId ? currentSettings.presets.find((p) => p.id === presetId) : null;
 
   if (preset) {
     // 編集モード
@@ -215,7 +213,7 @@ function openPresetModal(presetId?: string): void {
     presetSystemInput.value = preset.systemPrompt;
     presetUserInput.value = preset.userPromptTemplate;
     deletePresetBtn.style.display = 'block';
-    
+
     // デフォルトプリセットは削除不可
     const isDefault = DEFAULT_PRESETS.some((p) => p.id === preset.id);
     deletePresetBtn.disabled = isDefault;
@@ -236,19 +234,19 @@ function openPresetModal(presetId?: string): void {
 
   presetModal.classList.remove('hidden');
   presetNameInput.focus();
-}
+};
 
 /**
  * プリセットモーダルを閉じる
  */
-function closePresetModal(): void {
+const closePresetModal = (): void => {
   presetModal.classList.add('hidden');
-}
+};
 
 /**
  * モーダルからプリセットを保存
  */
-async function savePresetFromModal(): Promise<void> {
+const savePresetFromModal = async (): Promise<void> => {
   const name = presetNameInput.value.trim();
   const systemPrompt = presetSystemInput.value.trim();
   const userPromptTemplate = presetUserInput.value.trim();
@@ -270,7 +268,7 @@ async function savePresetFromModal(): Promise<void> {
   if (existingId) {
     // 更新
     await updatePreset(existingId, { name, systemPrompt, userPromptTemplate });
-    
+
     // ローカルの設定も更新
     const index = currentSettings.presets.findIndex((p) => p.id === existingId);
     if (index !== -1) {
@@ -297,12 +295,12 @@ async function savePresetFromModal(): Promise<void> {
   updateActivePresetSelect();
   closePresetModal();
   showToast('プリセットを保存しました');
-}
+};
 
 /**
  * モーダルからプリセットを削除
  */
-async function deletePresetFromModal(): Promise<void> {
+const deletePresetFromModal = async (): Promise<void> => {
   const id = presetIdInput.value;
   if (!id) return;
 
@@ -312,10 +310,10 @@ async function deletePresetFromModal(): Promise<void> {
   }
 
   await deletePreset(id);
-  
+
   // ローカルの設定も更新
   currentSettings.presets = currentSettings.presets.filter((p) => p.id !== id);
-  
+
   // 削除したのがアクティブなプリセットだった場合
   if (currentSettings.activePresetId === id && currentSettings.presets.length > 0) {
     currentSettings.activePresetId = currentSettings.presets[0].id;
@@ -325,12 +323,12 @@ async function deletePresetFromModal(): Promise<void> {
   updateActivePresetSelect();
   closePresetModal();
   showToast('プリセットを削除しました');
-}
+};
 
 /**
  * トースト通知を表示
  */
-function showToast(message: string): void {
+const showToast = (message: string): void => {
   // 既存のトーストを削除
   const existingToast = document.querySelector('.save-toast');
   if (existingToast) {
@@ -345,13 +343,13 @@ function showToast(message: string): void {
   setTimeout(() => {
     toast.remove();
   }, 3000);
-}
+};
 
 /**
  * HTMLエスケープ
  */
-function escapeHtml(text: string): string {
+const escapeHtml = (text: string): string => {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
-}
+};

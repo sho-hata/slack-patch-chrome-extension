@@ -31,7 +31,7 @@ let cachedInputField: HTMLElement | null = null;
 /**
  * アクティブな入力欄を検出
  */
-export function findActiveInputField(): HTMLElement | null {
+export const findActiveInputField = (): HTMLElement | null => {
   // フォーカスされている要素をチェック
   const activeElement = document.activeElement as HTMLElement;
   if (activeElement && isValidInputField(activeElement)) {
@@ -59,43 +59,43 @@ export function findActiveInputField(): HTMLElement | null {
   }
 
   return null;
-}
+};
 
 /**
  * 有効な入力欄かどうかを判定
  */
-function isValidInputField(element: HTMLElement): boolean {
+const isValidInputField = (element: HTMLElement): boolean => {
   return (
     element.getAttribute('contenteditable') === 'true' &&
     !element.closest('[aria-hidden="true"]')
   );
-}
+};
 
 /**
  * 要素が可視かどうかを判定
  */
-function isVisible(element: HTMLElement): boolean {
+const isVisible = (element: HTMLElement): boolean => {
   const style = window.getComputedStyle(element);
   return (
     style.display !== 'none' &&
     style.visibility !== 'hidden' &&
     style.opacity !== '0'
   );
-}
+};
 
 /**
  * 入力欄からテキストを取得（リッチテキスト・絵文字対応）
  */
-export function getInputText(inputField?: HTMLElement | null): string {
+export const getInputText = (inputField?: HTMLElement | null): string => {
   const field = inputField || findActiveInputField();
   if (!field) return '';
 
   // DOMを走査してテキスト、絵文字、フォーマットを取得
   const text = extractTextWithFormatting(field);
-  
+
   // 末尾の改行を削除
   return text.replace(/\n$/, '');
-}
+};
 
 /**
  * DOM要素からテキスト、絵文字、リッチテキストフォーマットを抽出
@@ -109,7 +109,7 @@ export function getInputText(inputField?: HTMLElement | null): string {
  * - リンク: <URL|text> または text
  * - リスト: • item
  */
-function extractTextWithFormatting(node: Node): string {
+const extractTextWithFormatting = (node: Node): string => {
   // テキストノード
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent || '';
@@ -211,7 +211,7 @@ function extractTextWithFormatting(node: Node): string {
   }
 
   return '';
-}
+};
 
 // マークダウンパターンマッチの型
 interface PatternMatch {
@@ -225,9 +225,9 @@ interface PatternMatch {
 /**
  * 最も早いマッチを見つける
  */
-function findEarliestMatch(text: string): PatternMatch | null {
+const findEarliestMatch = (text: string): PatternMatch | null => {
   const matches: PatternMatch[] = [];
-  
+
   // リンクパターン <URL|text>
   const linkMatch = text.match(/<([^|>]+)\|([^>]+)>/);
   if (linkMatch && linkMatch.index !== undefined) {
@@ -239,7 +239,7 @@ function findEarliestMatch(text: string): PatternMatch | null {
       href: linkMatch[1],
     });
   }
-  
+
   // 通常のフォーマットパターン
   const patterns = [
     { regex: /`([^`]+)`/, tag: 'code' },
@@ -247,7 +247,7 @@ function findEarliestMatch(text: string): PatternMatch | null {
     { regex: /_([^_]+)_/, tag: 'i' },
     { regex: /~([^~]+)~/, tag: 's' },
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern.regex);
     if (match && match.index !== undefined) {
@@ -259,33 +259,35 @@ function findEarliestMatch(text: string): PatternMatch | null {
       });
     }
   }
-  
+
   if (matches.length === 0) return null;
-  
+
   // 最も早いマッチを返す
   return matches.reduce((earliest, current) =>
-    current.index < earliest.index ? current : earliest
+    current.index < earliest.index ? current : earliest,
   );
-}
+};
 
 /**
  * Slackマークダウンをインラインで処理してDOM要素を作成
  * 対応フォーマット: *太字*, _イタリック_, `コード`, ~取り消し線~, <URL|text>
  */
-function parseSlackMarkdownLine(line: string): DocumentFragment {
+const parseSlackMarkdownLine = (line: string): DocumentFragment => {
   const fragment = document.createDocumentFragment();
-  
+
   let remaining = line;
-  
+
   while (remaining.length > 0) {
     const earliestMatch = findEarliestMatch(remaining);
-    
+
     if (earliestMatch) {
       // マッチ前のテキストを追加
       if (earliestMatch.index > 0) {
-        fragment.appendChild(document.createTextNode(remaining.substring(0, earliestMatch.index)));
+        fragment.appendChild(
+          document.createTextNode(remaining.substring(0, earliestMatch.index)),
+        );
       }
-      
+
       // フォーマット要素を作成
       const el = document.createElement(earliestMatch.tag);
       el.textContent = earliestMatch.content;
@@ -293,59 +295,62 @@ function parseSlackMarkdownLine(line: string): DocumentFragment {
         (el as HTMLAnchorElement).href = earliestMatch.href;
       }
       fragment.appendChild(el);
-      
+
       // 残りを更新
-      remaining = remaining.substring(earliestMatch.index + earliestMatch.length);
+      remaining = remaining.substring(
+        earliestMatch.index + earliestMatch.length,
+      );
     } else {
       // マッチがなければ残り全部をテキストとして追加
       fragment.appendChild(document.createTextNode(remaining));
       break;
     }
   }
-  
+
   return fragment;
-}
+};
 
 /**
  * Slackマークダウンを含むテキストをHTMLに変換
  * コードブロック（```）を先に処理してから、各行のインラインフォーマットを処理
  */
-function convertMarkdownToHtml(text: string): DocumentFragment {
+const convertMarkdownToHtml = (text: string): DocumentFragment => {
   const fragment = document.createDocumentFragment();
-  
+
   // コードブロックを分離
   const codeBlockRegex = /```\n?([\s\S]*?)\n?```/g;
   let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  
+  let match: RegExpExecArray | null = null;
+
+  // biome-ignore lint/suspicious/noAssignInExpressions: RegExp.exec requires assignment in condition
   while ((match = codeBlockRegex.exec(text)) !== null) {
     // コードブロック前のテキストを処理
     if (match.index > lastIndex) {
       const beforeText = text.substring(lastIndex, match.index);
       processInlineText(beforeText, fragment);
     }
-    
+
     // コードブロックを追加
     const pre = document.createElement('pre');
     pre.textContent = match[1];
     fragment.appendChild(pre);
-    
+
     lastIndex = match.index + match[0].length;
   }
-  
+
   // 残りのテキストを処理
   if (lastIndex < text.length) {
     const remainingText = text.substring(lastIndex);
     processInlineText(remainingText, fragment);
   }
-  
+
   return fragment;
-}
+};
 
 /**
  * インラインテキストを行ごとに処理してフラグメントに追加
  */
-function processInlineText(text: string, fragment: DocumentFragment): void {
+const processInlineText = (text: string, fragment: DocumentFragment): void => {
   const lines = text.split('\n');
   lines.forEach((line, index) => {
     if (index > 0) {
@@ -355,12 +360,15 @@ function processInlineText(text: string, fragment: DocumentFragment): void {
       fragment.appendChild(parseSlackMarkdownLine(line));
     }
   });
-}
+};
 
 /**
  * 入力欄にテキストを設定（Slackマークダウン対応）
  */
-export function setInputText(text: string, inputField?: HTMLElement | null): boolean {
+export const setInputText = (
+  text: string,
+  inputField?: HTMLElement | null,
+): boolean => {
   const field = inputField || findActiveInputField();
   if (!field) return false;
 
@@ -370,7 +378,7 @@ export function setInputText(text: string, inputField?: HTMLElement | null): boo
 
     // テキストをクリアして設定
     field.innerHTML = '';
-    
+
     // マークダウンを含むテキストをHTMLに変換して設定
     const htmlContent = convertMarkdownToHtml(text);
     field.appendChild(htmlContent);
@@ -383,37 +391,43 @@ export function setInputText(text: string, inputField?: HTMLElement | null): boo
     console.error('Failed to set input text:', error);
     return false;
   }
-}
+};
 
 /**
  * 入力イベントを発火してSlackに変更を通知
  */
-function dispatchInputEvents(element: HTMLElement): void {
+const dispatchInputEvents = (element: HTMLElement): void => {
   // input イベント
-  element.dispatchEvent(new InputEvent('input', {
-    bubbles: true,
-    cancelable: true,
-    inputType: 'insertText',
-  }));
+  element.dispatchEvent(
+    new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+    }),
+  );
 
   // beforeinput イベント
-  element.dispatchEvent(new InputEvent('beforeinput', {
-    bubbles: true,
-    cancelable: true,
-    inputType: 'insertText',
-  }));
+  element.dispatchEvent(
+    new InputEvent('beforeinput', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+    }),
+  );
 
   // change イベント
-  element.dispatchEvent(new Event('change', {
-    bubbles: true,
-    cancelable: true,
-  }));
-}
+  element.dispatchEvent(
+    new Event('change', {
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+};
 
 /**
  * 送信をトリガー
  */
-export function triggerSend(inputField?: HTMLElement | null): boolean {
+export const triggerSend = (inputField?: HTMLElement | null): boolean => {
   const field = inputField || findActiveInputField();
   if (!field) return false;
 
@@ -442,17 +456,18 @@ export function triggerSend(inputField?: HTMLElement | null): boolean {
     console.error('Failed to trigger send:', error);
     return false;
   }
-}
+};
 
 /**
  * 送信ボタンを探す
  */
-function findSendButton(inputField: HTMLElement): HTMLElement | null {
+const findSendButton = (inputField: HTMLElement): HTMLElement | null => {
   // 入力欄の親要素から送信ボタンを探す
-  const container = inputField.closest('.c-wysiwyg_container') ||
-                   inputField.closest('[data-qa="message_input"]') ||
-                   inputField.closest('[data-qa="message-input"]') ||
-                   inputField.closest('.p-message_input');
+  const container =
+    inputField.closest('.c-wysiwyg_container') ||
+    inputField.closest('[data-qa="message_input"]') ||
+    inputField.closest('[data-qa="message-input"]') ||
+    inputField.closest('.p-message_input');
 
   if (container) {
     for (const selector of SEND_BUTTON_SELECTORS) {
@@ -474,13 +489,15 @@ function findSendButton(inputField: HTMLElement): HTMLElement | null {
   }
 
   return null;
-}
+};
 
 /**
  * 入力欄のDOM変更を監視
  * 入力欄が再生成された場合に対応
  */
-export function observeInputField(callback: (inputField: HTMLElement) => void): MutationObserver {
+export const observeInputField = (
+  callback: (inputField: HTMLElement) => void,
+): MutationObserver => {
   const observer = new MutationObserver(() => {
     const inputField = findActiveInputField();
     if (inputField && inputField !== cachedInputField) {
@@ -495,16 +512,16 @@ export function observeInputField(callback: (inputField: HTMLElement) => void): 
   });
 
   return observer;
-}
+};
 
 /**
  * 入力欄をクリア
  */
-export function clearInputField(inputField?: HTMLElement | null): boolean {
+export const clearInputField = (inputField?: HTMLElement | null): boolean => {
   const field = inputField || findActiveInputField();
   if (!field) return false;
 
   field.innerHTML = '';
   dispatchInputEvents(field);
   return true;
-}
+};

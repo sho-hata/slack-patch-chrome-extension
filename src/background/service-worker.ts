@@ -1,18 +1,18 @@
 import type {
   ExtensionMessage,
+  OpenAIChatCompletionResponse,
   ProofreadResponse,
   SettingsResponse,
-  OpenAIChatCompletionResponse,
 } from '@/types';
-import { getStorageData, getActivePreset } from '@/utils/storage';
-import { OPENAI_API_ENDPOINT, API_TIMEOUT } from '@/utils/constants';
+import { API_TIMEOUT, OPENAI_API_ENDPOINT } from '@/utils/constants';
+import { getActivePreset, getStorageData } from '@/utils/storage';
 
 // メッセージリスナー
 chrome.runtime.onMessage.addListener(
   (
     message: ExtensionMessage,
     _sender: chrome.runtime.MessageSender,
-    sendResponse: (response: ProofreadResponse | SettingsResponse) => void,
+    sendResponse: (response: ProofreadResponse | SettingsResponse) => void
   ) => {
     if (message.type === 'PROOFREAD') {
       handleProofread(message.text, message.presetId)
@@ -41,30 +41,24 @@ chrome.runtime.onMessage.addListener(
     }
 
     return false;
-  },
+  }
 );
 
 // 添削処理
-async function handleProofread(
-  text: string,
-  presetId?: string,
-): Promise<ProofreadResponse> {
+async function handleProofread(text: string, presetId?: string): Promise<ProofreadResponse> {
   const settings = await getStorageData();
 
   // APIキーチェック
   if (!settings.apiKey) {
     return {
       success: false,
-      error:
-        'APIキーが設定されていません。拡張機能のオプションページで設定してください。',
+      error: 'APIキーが設定されていません。拡張機能のオプションページで設定してください。',
       errorType: 'NO_API_KEY',
     };
   }
 
   // プリセット取得
-  let preset = presetId
-    ? settings.presets.find((p) => p.id === presetId)
-    : await getActivePreset();
+  let preset = presetId ? settings.presets.find((p) => p.id === presetId) : await getActivePreset();
 
   if (!preset) {
     preset = settings.presets[0];
@@ -141,7 +135,7 @@ async function handleProofread(
 }
 
 // APIエラーハンドリング
-function handleApiError(status: number): ProofreadResponse {
+const handleApiError = (status: number): ProofreadResponse => {
   switch (status) {
     case 401:
       return {
@@ -152,8 +146,7 @@ function handleApiError(status: number): ProofreadResponse {
     case 429:
       return {
         success: false,
-        error:
-          'APIのレート制限に達しました。しばらく待ってからお試しください。',
+        error: 'APIのレート制限に達しました。しばらく待ってからお試しください。',
         errorType: 'RATE_LIMIT',
       };
     case 500:
@@ -162,8 +155,7 @@ function handleApiError(status: number): ProofreadResponse {
     case 504:
       return {
         success: false,
-        error:
-          'OpenAI APIサーバーでエラーが発生しました。しばらく待ってからお試しください。',
+        error: 'OpenAI APIサーバーでエラーが発生しました。しばらく待ってからお試しください。',
         errorType: 'SERVER_ERROR',
       };
     default:
@@ -173,7 +165,7 @@ function handleApiError(status: number): ProofreadResponse {
         errorType: 'SERVER_ERROR',
       };
   }
-}
+};
 
 // 拡張機能インストール時の初期化
 chrome.runtime.onInstalled.addListener(async (details) => {

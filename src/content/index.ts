@@ -4,14 +4,14 @@
  */
 
 import type {
+  GetSettingsRequest,
   ProofreadRequest,
   ProofreadResponse,
-  GetSettingsRequest,
   SettingsResponse,
   StorageData,
 } from '@/types';
+import { type ModalCallbacks, SlackPatchModal } from './modal';
 import { findActiveInputField, getInputText, setInputText, triggerSend } from './slack-dom';
-import { SlackPatchModal, type ModalCallbacks } from './modal';
 
 // 現在のモーダルインスタンス
 let currentModal: SlackPatchModal | null = null;
@@ -28,14 +28,14 @@ let initialized = false;
 /**
  * 拡張機能のコンテキストが有効かチェック
  */
-function isExtensionContextValid(): boolean {
+const isExtensionContextValid = (): boolean => {
   return typeof chrome !== 'undefined' && !!chrome.runtime?.id;
-}
+};
 
 /**
  * 初期化
  */
-function initialize(): void {
+const initialize = (): void => {
   if (initialized) return;
   initialized = true;
 
@@ -46,12 +46,12 @@ function initialize(): void {
 
   // 設定を事前読み込み
   loadSettings();
-}
+};
 
 /**
  * 設定を読み込む
  */
-async function loadSettings(): Promise<StorageData> {
+const loadSettings = async (): Promise<StorageData> => {
   return new Promise((resolve, reject) => {
     if (!isExtensionContextValid()) {
       reject(new Error('Extension context invalidated'));
@@ -72,12 +72,12 @@ async function loadSettings(): Promise<StorageData> {
       reject(new Error('Failed to send message'));
     }
   });
-}
+};
 
 /**
  * キーダウンイベントハンドラ
  */
-function handleKeyDown(event: KeyboardEvent): void {
+const handleKeyDown = (event: KeyboardEvent): void => {
   // IME変換中は無視
   if (event.isComposing) return;
 
@@ -107,12 +107,12 @@ function handleKeyDown(event: KeyboardEvent): void {
     // 添削フローを開始
     startProofreadFlow(text);
   }
-}
+};
 
 /**
  * 添削フローを開始
  */
-async function startProofreadFlow(originalText: string): Promise<void> {
+const startProofreadFlow = async (originalText: string): Promise<void> => {
   // コンテキストチェック
   if (!isExtensionContextValid()) {
     console.warn('[Slack Patch] Extension context invalidated. Please reload the page.');
@@ -121,7 +121,7 @@ async function startProofreadFlow(originalText: string): Promise<void> {
 
   try {
     // 設定を取得
-    const settings = cachedSettings || await loadSettings();
+    const settings = cachedSettings || (await loadSettings());
 
     // モーダルコールバック
     const callbacks: ModalCallbacks = {
@@ -140,12 +140,12 @@ async function startProofreadFlow(originalText: string): Promise<void> {
   } catch (error) {
     console.error('[Slack Patch] Failed to start proofread flow:', error);
   }
-}
+};
 
 /**
  * 添削リクエストを送信
  */
-function requestProofread(text: string, presetId?: string): void {
+const requestProofread = (text: string, presetId?: string): void => {
   if (!isExtensionContextValid()) {
     if (currentModal) {
       currentModal.setError('拡張機能が更新されました。ページを再読み込みしてください。');
@@ -181,12 +181,12 @@ function requestProofread(text: string, presetId?: string): void {
       currentModal.setError('拡張機能との通信に失敗しました。ページを再読み込みしてください。');
     }
   }
-}
+};
 
 /**
  * 送信ハンドラ
  */
-function handleSend(text: string): void {
+const handleSend = (text: string): void => {
   if (!currentModal || !currentInputField) return;
 
   currentModal.setSending();
@@ -204,50 +204,50 @@ function handleSend(text: string): void {
     // 設定失敗時はモーダルを閉じてユーザーに知らせる
     currentModal.setError('テキストの設定に失敗しました。手動でコピー&ペーストしてください。');
   }
-}
+};
 
 /**
  * キャンセルハンドラ
  */
-function handleCancel(): void {
+const handleCancel = (): void => {
   closeModal();
-}
+};
 
 /**
  * リトライハンドラ
  */
-function handleRetry(originalText: string): void {
+const handleRetry = (originalText: string): void => {
   if (!currentModal) return;
   currentModal.setLoading();
   requestProofread(originalText);
-}
+};
 
 /**
  * プリセット変更ハンドラ
  */
-function handlePresetChange(originalText: string, presetId: string): void {
+const handlePresetChange = (originalText: string, presetId: string): void => {
   if (!currentModal) return;
-  
+
   // 設定を更新
   if (cachedSettings) {
     cachedSettings.activePresetId = presetId;
   }
-  
+
   // 再度添削リクエスト
   currentModal.setLoading();
   requestProofread(originalText, presetId);
-}
+};
 
 /**
  * モーダルを閉じる
  */
-function closeModal(): void {
+const closeModal = (): void => {
   if (currentModal) {
     currentModal.hide();
     currentModal = null;
   }
   currentInputField = null;
-}
+};
 
 // 初期化を実行
 initialize();
