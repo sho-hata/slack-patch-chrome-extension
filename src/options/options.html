@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Patch - 設定</title>
+  <link rel="stylesheet" href="./options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">Slack Patch 設定</h1>
+      <p class="subtitle">Web版Slackで送信前メッセージをLLMで添削</p>
+    </header>
+
+    <main class="main">
+      <!-- 警告メッセージ -->
+      <div class="notice">
+        <div class="notice-icon">ℹ</div>
+        <div class="notice-content">
+          <strong>プライバシーについて</strong>
+          <p>この拡張機能は、Slackで入力したメッセージをOpenAI APIに送信して添削を行います。機密情報の取り扱いにご注意ください。</p>
+        </div>
+      </div>
+
+      <!-- API設定 -->
+      <section class="section">
+        <h2 class="section-title">API設定</h2>
+        
+        <div class="form-group">
+          <label class="label" for="api-key">OpenAI APIキー</label>
+          <div class="input-with-toggle">
+            <input type="password" id="api-key" class="input" placeholder="sk-..." autocomplete="off">
+            <button type="button" id="toggle-api-key" class="toggle-btn" title="表示/非表示">
+              <span class="icon-eye">👁</span>
+            </button>
+          </div>
+          <p class="help-text">
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a>でAPIキーを取得してください。
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="model">モデル</label>
+          <select id="model" class="select">
+            <!-- JavaScriptで動的に生成 -->
+          </select>
+        </div>
+      </section>
+
+      <!-- プリセット設定 -->
+      <section class="section">
+        <h2 class="section-title">プロンプトプリセット</h2>
+        
+        <div class="form-group">
+          <label class="label" for="active-preset">アクティブなプリセット</label>
+          <select id="active-preset" class="select">
+            <!-- JavaScriptで動的に生成 -->
+          </select>
+          <p class="help-text">Cmd/Ctrl+Enter で添削する際に使用されるプリセット</p>
+        </div>
+
+        <div class="preset-list" id="preset-list">
+          <!-- JavaScriptで動的に生成 -->
+        </div>
+
+        <button type="button" id="add-preset" class="btn btn-secondary">
+          + 新しいプリセットを追加
+        </button>
+      </section>
+
+      <!-- 使い方 -->
+      <section class="section">
+        <h2 class="section-title">使い方</h2>
+        <ol class="usage-list">
+          <li>Web版Slack (app.slack.com) でメッセージを入力</li>
+          <li><kbd>Cmd</kbd>+<kbd>Enter</kbd> (Mac) または <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (Windows/Linux) を押す</li>
+          <li>添削結果を確認・編集して「Send」で送信</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Slack Patch v1.0.0</p>
+    </footer>
+  </div>
+
+  <!-- プリセット編集モーダル -->
+  <div id="preset-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">プリセットを編集</h3>
+        <button type="button" class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="preset-id">
+        
+        <div class="form-group">
+          <label class="label" for="preset-name">プリセット名</label>
+          <input type="text" id="preset-name" class="input" placeholder="例: ビジネス文章校正">
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="preset-system">システムプロンプト</label>
+          <textarea id="preset-system" class="textarea" rows="4" placeholder="例: あなたは優秀な文章校正者です..."></textarea>
+          <p class="help-text">LLMの役割や振る舞いを定義します</p>
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="preset-user">ユーザープロンプトテンプレート</label>
+          <textarea id="preset-user" class="textarea" rows="3" placeholder="例: 次のSlackメッセージを添削してください..."></textarea>
+          <p class="help-text">このテキストの後に元のメッセージが追加されます</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="delete-preset" class="btn btn-danger">削除</button>
+        <div class="modal-footer-right">
+          <button type="button" id="cancel-preset" class="btn btn-secondary">キャンセル</button>
+          <button type="button" id="save-preset" class="btn btn-primary">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./options.ts"></script>
+</body>
+</html>

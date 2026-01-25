@@ -1,0 +1,316 @@
+/* Slack Patch モーダルスタイル */
+
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slack-patch-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slack-patch-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+}
+
+/* ヘッダー */
+.slack-patch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e1e4e8;
+  background: #f8f9fa;
+}
+
+.slack-patch-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1c1d;
+  margin: 0;
+}
+
+.slack-patch-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slack-patch-preset-select {
+  padding: 6px 10px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+  color: #1d1c1d;
+}
+
+.slack-patch-preset-select:focus {
+  outline: none;
+  border-color: #1264a3;
+  box-shadow: 0 0 0 2px rgba(18, 100, 163, 0.2);
+}
+
+.slack-patch-close-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #616061;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slack-patch-close-btn:hover {
+  background: #e1e4e8;
+  color: #1d1c1d;
+}
+
+/* コンテンツ */
+.slack-patch-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 20px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.slack-patch-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.slack-patch-panel-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #616061;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.slack-patch-text-before {
+  flex: 1;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1d1c1d;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.slack-patch-text-after {
+  flex: 1;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #1264a3;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1d1c1d;
+  resize: none;
+  overflow-y: auto;
+  font-family: inherit;
+}
+
+.slack-patch-text-after:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(18, 100, 163, 0.2);
+}
+
+/* フッター */
+.slack-patch-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #e1e4e8;
+  background: #f8f9fa;
+}
+
+.slack-patch-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.slack-patch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slack-patch-btn-copy {
+  background: #fff;
+  color: #1d1c1d;
+  border: 1px solid #d1d5da;
+}
+
+.slack-patch-btn-copy:hover:not(:disabled) {
+  background: #f8f9fa;
+}
+
+.slack-patch-btn-cancel {
+  background: #fff;
+  color: #1d1c1d;
+  border: 1px solid #d1d5da;
+}
+
+.slack-patch-btn-cancel:hover:not(:disabled) {
+  background: #f8f9fa;
+}
+
+.slack-patch-btn-send {
+  background: #007a5a;
+  color: #fff;
+  border: 1px solid #007a5a;
+}
+
+.slack-patch-btn-send:hover:not(:disabled) {
+  background: #006048;
+}
+
+/* ローディング状態 */
+.slack-patch-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #616061;
+}
+
+.slack-patch-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e1e4e8;
+  border-top-color: #1264a3;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.slack-patch-loading-text {
+  font-size: 14px;
+  color: #616061;
+}
+
+/* エラー状態 */
+.slack-patch-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.slack-patch-error-icon {
+  width: 48px;
+  height: 48px;
+  background: #fef2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #dc2626;
+  font-size: 24px;
+}
+
+.slack-patch-error-message {
+  font-size: 14px;
+  color: #dc2626;
+  margin-bottom: 16px;
+  max-width: 400px;
+}
+
+.slack-patch-btn-retry {
+  background: #1264a3;
+  color: #fff;
+  border: 1px solid #1264a3;
+}
+
+.slack-patch-btn-retry:hover:not(:disabled) {
+  background: #0f5289;
+}
+
+/* ステータスメッセージ */
+.slack-patch-status {
+  font-size: 12px;
+  color: #616061;
+  margin-right: auto;
+}
+
+.slack-patch-status.success {
+  color: #007a5a;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  .slack-patch-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .slack-patch-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
