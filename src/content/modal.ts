@@ -252,7 +252,7 @@ export class SlackPatchModal {
     };
 
     // Shadow DOM内のfocusoutを監視
-    this.shadowRoot.addEventListener('focusout', this.boundFocusOutHandler);
+    this.shadowRoot.addEventListener('focusout', this.boundFocusOutHandler as EventListener);
   }
 
   /**
@@ -260,7 +260,7 @@ export class SlackPatchModal {
    */
   private removeFocusOutPrevention(): void {
     if (this.boundFocusOutHandler) {
-      this.shadowRoot.removeEventListener('focusout', this.boundFocusOutHandler);
+      this.shadowRoot.removeEventListener('focusout', this.boundFocusOutHandler as EventListener);
       this.boundFocusOutHandler = null;
     }
   }
