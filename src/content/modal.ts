@@ -8,9 +8,11 @@ import styles from './styles.css?inline';
 
 export type ModalCallbacks = {
   onSend: (text: string) => void;
+  onSendOriginal: () => void;
   onCancel: () => void;
   onRetry: () => void;
   onPresetChange: (presetId: string) => void;
+  onProofread: () => void;
 };
 
 export class SlackPatchModal {
@@ -23,7 +25,14 @@ export class SlackPatchModal {
   private callbacks: ModalCallbacks;
   private presets: Preset[] = [];
   private activePresetId = '';
+  private beforeTextarea: HTMLTextAreaElement | null = null;
   private afterTextarea: HTMLTextAreaElement | null = null;
+  private disabledInputField: HTMLElement | null = null;
+  private inertElements: HTMLElement[] = [];
+
+  // イベントハンドラへの参照（クリーンアップ用）
+  private boundEventInterceptor: ((e: Event) => void) | null = null;
+  private boundFocusOutHandler: ((e: FocusEvent) => void) | null = null;
 
   constructor(callbacks: ModalCallbacks) {
     this.callbacks = callbacks;
@@ -31,7 +40,7 @@ export class SlackPatchModal {
     // Shadow DOM用のコンテナを作成
     this.container = document.createElement('div');
     this.container.id = 'slack-patch-modal-root';
-    this.shadowRoot = this.container.attachShadow({ mode: 'closed' });
+    this.shadowRoot = this.container.attachShadow({ mode: 'closed', delegatesFocus: true });
 
     // スタイルを注入
     const styleElement = document.createElement('style');
@@ -46,23 +55,226 @@ export class SlackPatchModal {
     this.originalText = originalText;
     this.presets = settings.presets;
     this.activePresetId = settings.activePresetId;
-    this.state = 'loading';
+    this.state = 'preview';
+
+    // Slackの入力フィールドからフォーカスを外す
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    // Slackの入力関連要素を完全に無効化（inert属性を使用）
+    this.disableSlackInputs();
+
+    // キーボードイベントをキャプチャフェーズで遮断
+    this.setupEventInterception();
 
     document.body.appendChild(this.container);
     this.render();
 
-    // Escキーでクローズ
-    document.addEventListener('keydown', this.handleKeyDown);
+    // フォーカスアウト防止を設定
+    this.setupFocusOutPrevention();
+  }
+
+  /**
+   * Slackの入力関連要素を無効化
+   * inert属性を使用してフォーカス不可にする
+   */
+  private disableSlackInputs(): void {
+    // Slackの入力フィールドを一時的に無効化
+    const inputField = document.querySelector('[data-message-input="true"]');
+    if (inputField instanceof HTMLElement && inputField.isContentEditable) {
+      inputField.contentEditable = 'false';
+      this.disabledInputField = inputField;
+    }
+
+    // メッセージ入力コンテナにinert属性を追加
+    const inputContainers = document.querySelectorAll<HTMLElement>(
+      '[data-qa="message_input"], [data-qa="message-input"], .p-message_input, .c-wysiwyg_container'
+    );
+    for (const container of inputContainers) {
+      if (!container.hasAttribute('inert')) {
+        container.setAttribute('inert', '');
+        this.inertElements.push(container);
+      }
+    }
+
+    // contenteditable要素もinertに
+    const editableElements = document.querySelectorAll<HTMLElement>(
+      '[contenteditable="true"]:not([data-slack-patch-modal])'
+    );
+    for (const el of editableElements) {
+      if (!el.hasAttribute('inert') && !this.shadowRoot.contains(el)) {
+        el.setAttribute('inert', '');
+        this.inertElements.push(el);
+      }
+    }
+  }
+
+  /**
+   * Slackの入力関連要素を復元
+   */
+  private restoreSlackInputs(): void {
+    // contentEditable復元
+    if (this.disabledInputField) {
+      this.disabledInputField.contentEditable = 'true';
+      this.disabledInputField = null;
+    }
+
+    // inert属性を削除
+    for (const el of this.inertElements) {
+      el.removeAttribute('inert');
+    }
+    this.inertElements = [];
+  }
+
+  /**
+   * イベントがモーダル内から発生したかどうかを判定
+   * Shadow DOMの境界を越えてもcomposedPath()で正確に判定
+   */
+  private isEventFromModal(e: Event): boolean {
+    // composedPath()はShadow DOM境界を越えてイベントパスを取得できる
+    const path = e.composedPath();
+    return path.some(
+      (el) => el === this.container || (el instanceof Node && this.shadowRoot.contains(el))
+    );
+  }
+
+  /**
+   * キーボードイベントをキャプチャフェーズで遮断
+   * Slackのグローバルハンドラに到達する前にイベントを停止
+   * 注: input/beforeinputは遮断しない（テキストエリアの編集を妨げないため）
+   */
+  private setupEventInterception(): void {
+    this.boundEventInterceptor = (e: Event) => {
+      // keydownイベントの場合はショートカットキーを処理
+      if (e.type === 'keydown') {
+        this.handleKeyboardShortcut(e as KeyboardEvent);
+      }
+
+      // モーダル内からのイベントかチェック
+      const isFromModal = this.isEventFromModal(e);
+
+      // モーダル外からのイベントは遮断
+      if (!isFromModal) {
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      // モーダル内のキーボードイベントはSlackに到達させない
+      e.stopPropagation();
+    };
+
+    // キャプチャフェーズでキーボードイベントのみを登録
+    // input/beforeinputは遮断しない（テキストエリアの編集に必要）
+    const eventTypes = ['keydown', 'keyup', 'keypress'];
+    for (const eventType of eventTypes) {
+      document.addEventListener(eventType, this.boundEventInterceptor, true);
+    }
+  }
+
+  /**
+   * ショートカットキーを処理
+   * キャプチャフェーズで呼ばれるため、確実にイベントを受け取れる
+   */
+  private handleKeyboardShortcut(e: KeyboardEvent): void {
+    // Escapeキーでモーダルを閉じる
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      this.callbacks.onCancel();
+      return;
+    }
+
+    // Cmd+Enter または Ctrl+Enter の検出
+    const isModifierPressed = e.metaKey || e.ctrlKey;
+    const isEnter = e.key === 'Enter';
+
+    if (isModifierPressed && isEnter && !e.shiftKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (this.state === 'preview') {
+        // preview状態: 校正開始（テキストエリアから最新のテキストを取得）
+        if (this.beforeTextarea) {
+          this.originalText = this.beforeTextarea.value;
+        }
+        this.callbacks.onProofread();
+      } else if (this.state === 'ready') {
+        // ready状態: 添削後のテキストを送信
+        if (this.afterTextarea) {
+          this.proofreadText = this.afterTextarea.value;
+        }
+        this.callbacks.onSend(this.proofreadText);
+      }
+    }
+  }
+
+  /**
+   * イベント遮断を解除
+   */
+  private removeEventInterception(): void {
+    if (this.boundEventInterceptor) {
+      const eventTypes = ['keydown', 'keyup', 'keypress'];
+      for (const eventType of eventTypes) {
+        document.removeEventListener(eventType, this.boundEventInterceptor, true);
+      }
+      this.boundEventInterceptor = null;
+    }
+  }
+
+  /**
+   * フォーカスアウト防止を設定
+   * テキストエリアからフォーカスが外れそうになったときに防ぐ
+   */
+  private setupFocusOutPrevention(): void {
+    this.boundFocusOutHandler = (e: FocusEvent) => {
+      const relatedTarget = e.relatedTarget as Node | null;
+
+      // フォーカス先がモーダル外の場合
+      if (!relatedTarget || !this.shadowRoot.contains(relatedTarget)) {
+        // 現在フォーカスしているテキストエリアにフォーカスを戻す
+        const activeTextarea = this.beforeTextarea || this.afterTextarea;
+        if (activeTextarea) {
+          requestAnimationFrame(() => {
+            activeTextarea.focus();
+          });
+        }
+      }
+    };
+
+    // Shadow DOM内のfocusoutを監視
+    this.shadowRoot.addEventListener('focusout', this.boundFocusOutHandler);
+  }
+
+  /**
+   * フォーカスアウト防止を解除
+   */
+  private removeFocusOutPrevention(): void {
+    if (this.boundFocusOutHandler) {
+      this.shadowRoot.removeEventListener('focusout', this.boundFocusOutHandler);
+      this.boundFocusOutHandler = null;
+    }
   }
 
   /**
    * モーダルを非表示
    */
   hide(): void {
-    document.removeEventListener('keydown', this.handleKeyDown);
+    // イベントリスナーをクリーンアップ
+    this.removeEventInterception();
+    this.removeFocusOutPrevention();
+
+    // DOMからモーダルを削除
     if (this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+
+    // Slackの入力フィールドを復元
+    this.restoreSlackInputs();
+
+    // テキストエリアへの参照をクリア
+    this.beforeTextarea = null;
+    this.afterTextarea = null;
   }
 
   /**
@@ -105,20 +317,34 @@ export class SlackPatchModal {
   }
 
   /**
-   * キーボードイベントハンドラ
-   */
-  private handleKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      this.callbacks.onCancel();
-    }
-  };
-
-  /**
    * モーダルをレンダリング
    */
   private render(): void {
+    // preview状態で既にテキストエリアが存在する場合は、値だけ更新して再構築を避ける
+    if (
+      this.state === 'preview' &&
+      this.beforeTextarea &&
+      this.shadowRoot.contains(this.beforeTextarea)
+    ) {
+      // テキストエリアの値を更新（フォーカスを維持）
+      const selectionStart = this.beforeTextarea.selectionStart;
+      const selectionEnd = this.beforeTextarea.selectionEnd;
+      const hadFocus = document.activeElement === this.beforeTextarea;
+      this.beforeTextarea.value = this.originalText;
+      // カーソル位置を復元
+      this.beforeTextarea.setSelectionRange(selectionStart, selectionEnd);
+      // フォーカスが外れていた場合は再度フォーカスを設定
+      if (hadFocus && document.activeElement !== this.beforeTextarea) {
+        setTimeout(() => {
+          if (this.beforeTextarea) {
+            this.beforeTextarea.focus();
+            this.beforeTextarea.setSelectionRange(selectionStart, selectionEnd);
+          }
+        }, 0);
+      }
+      return;
+    }
+
     // 既存のコンテンツをクリア（スタイル以外）
     const existingModal = this.shadowRoot.querySelector('.slack-patch-overlay');
     if (existingModal) {
@@ -209,6 +435,31 @@ export class SlackPatchModal {
     content.className = 'slack-patch-content';
 
     switch (this.state) {
+      case 'preview': {
+        // Before パネルのみ表示（編集可能）
+        const beforePanel = document.createElement('div');
+        beforePanel.className = 'slack-patch-panel';
+        beforePanel.style.gridColumn = '1 / -1';
+
+        const beforeLabel = document.createElement('div');
+        beforeLabel.className = 'slack-patch-panel-label';
+        beforeLabel.textContent = '送信前';
+
+        this.beforeTextarea = document.createElement('textarea');
+        this.beforeTextarea.className = 'slack-patch-text-before-editable';
+        this.beforeTextarea.setAttribute('tabindex', '0');
+        this.beforeTextarea.value = this.originalText;
+        this.beforeTextarea.addEventListener('input', (e) => {
+          // テキストを更新するだけで、render()は呼ばない
+          this.originalText = (e.target as HTMLTextAreaElement).value;
+        });
+
+        beforePanel.appendChild(beforeLabel);
+        beforePanel.appendChild(this.beforeTextarea);
+        content.appendChild(beforePanel);
+        break;
+      }
+
       case 'loading':
         content.innerHTML = `
           <div class="slack-patch-loading" style="grid-column: 1 / -1;">
@@ -239,7 +490,7 @@ export class SlackPatchModal {
 
         const beforeLabel = document.createElement('div');
         beforeLabel.className = 'slack-patch-panel-label';
-        beforeLabel.textContent = '送信前 (Before)';
+        beforeLabel.textContent = '送信前';
 
         const beforeText = document.createElement('div');
         beforeText.className = 'slack-patch-text-before';
@@ -254,10 +505,11 @@ export class SlackPatchModal {
 
         const afterLabel = document.createElement('div');
         afterLabel.className = 'slack-patch-panel-label';
-        afterLabel.textContent = '添削後 (After)';
+        afterLabel.textContent = '添削後';
 
         this.afterTextarea = document.createElement('textarea');
         this.afterTextarea.className = 'slack-patch-text-after';
+        this.afterTextarea.setAttribute('tabindex', '0');
         this.afterTextarea.value = this.proofreadText;
         this.afterTextarea.disabled = this.state === 'sending';
         this.afterTextarea.addEventListener('input', (e) => {
@@ -293,40 +545,76 @@ export class SlackPatchModal {
 
     footer.appendChild(status);
 
-    // Copy ボタン
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'slack-patch-btn slack-patch-btn-copy';
-    copyBtn.textContent = 'Copy';
-    copyBtn.disabled = this.state !== 'ready';
-    copyBtn.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(this.proofreadText);
-      status.textContent = 'コピーしました';
-      status.classList.add('success');
-      setTimeout(() => {
-        status.textContent = '';
-        status.classList.remove('success');
-      }, 2000);
-    });
+    if (this.state === 'preview') {
+      // preview状態: 校正するボタン、そのまま送信ボタン、Cancelボタン
+      const proofreadBtn = document.createElement('button');
+      proofreadBtn.className = 'slack-patch-btn slack-patch-btn-proofread';
+      const shortcutHint = navigator.platform.includes('Mac') ? 'Cmd+Enter' : 'Ctrl+Enter';
+      proofreadBtn.innerHTML = `校正する <span class="shortcut-hint">${shortcutHint}</span>`;
+      proofreadBtn.addEventListener('click', () => {
+        // テキストエリアから最新のテキストを取得
+        if (this.beforeTextarea) {
+          this.originalText = this.beforeTextarea.value;
+        }
+        this.callbacks.onProofread();
+      });
 
-    // Cancel ボタン
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.disabled = this.state === 'sending';
-    cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
+      const sendOriginalBtn = document.createElement('button');
+      sendOriginalBtn.className = 'slack-patch-btn slack-patch-btn-send-original';
+      sendOriginalBtn.textContent = 'そのまま送信';
+      sendOriginalBtn.addEventListener('click', () => {
+        // テキストエリアから最新のテキストを取得
+        if (this.beforeTextarea) {
+          this.originalText = this.beforeTextarea.value;
+        }
+        this.callbacks.onSendOriginal();
+      });
 
-    // Send ボタン
-    const sendBtn = document.createElement('button');
-    sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
-    sendBtn.textContent = this.state === 'sending' ? '送信中...' : 'Send';
-    sendBtn.disabled = this.state !== 'ready';
-    sendBtn.addEventListener('click', () => {
-      this.callbacks.onSend(this.proofreadText);
-    });
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
-    footer.appendChild(copyBtn);
-    footer.appendChild(cancelBtn);
-    footer.appendChild(sendBtn);
+      footer.appendChild(proofreadBtn);
+      footer.appendChild(sendOriginalBtn);
+      footer.appendChild(cancelBtn);
+    } else {
+      // ready/loading/error/sending状態: 既存のボタン
+      // コピーボタン
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'slack-patch-btn slack-patch-btn-copy';
+      copyBtn.textContent = 'コピー';
+      copyBtn.disabled = this.state !== 'ready';
+      copyBtn.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(this.proofreadText);
+        status.textContent = 'コピーしました';
+        status.classList.add('success');
+        setTimeout(() => {
+          status.textContent = '';
+          status.classList.remove('success');
+        }, 2000);
+      });
+
+      // キャンセルボタン
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.disabled = this.state === 'sending';
+      cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
+
+      // 送信ボタン
+      const sendBtn = document.createElement('button');
+      sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
+      sendBtn.textContent = this.state === 'sending' ? '送信中...' : '送信';
+      sendBtn.disabled = this.state !== 'ready';
+      sendBtn.addEventListener('click', () => {
+        this.callbacks.onSend(this.proofreadText);
+      });
+
+      footer.appendChild(copyBtn);
+      footer.appendChild(cancelBtn);
+      footer.appendChild(sendBtn);
+    }
 
     return footer;
   }
@@ -361,7 +649,23 @@ export class SlackPatchModal {
     });
 
     // 初期フォーカス
-    setTimeout(() => firstElement.focus(), 0);
+    setTimeout(() => {
+      // preview状態の場合はテキストエリアにフォーカス
+      if (this.state === 'preview' && this.beforeTextarea) {
+        // Slackの入力フィールドからフォーカスを外す
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        this.beforeTextarea.focus();
+        // カーソルを末尾に移動
+        this.beforeTextarea.setSelectionRange(
+          this.beforeTextarea.value.length,
+          this.beforeTextarea.value.length
+        );
+      } else {
+        firstElement.focus();
+      }
+    }, 100);
   }
 
   /**
@@ -378,5 +682,12 @@ export class SlackPatchModal {
    */
   getCurrentText(): string {
     return this.proofreadText;
+  }
+
+  /**
+   * 現在の元テキストを取得（編集可能）
+   */
+  getCurrentOriginalText(): string {
+    return this.originalText;
   }
 }

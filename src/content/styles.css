@@ -148,6 +148,25 @@
   word-break: break-word;
 }
 
+.slack-patch-text-before-editable {
+  flex: 1;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #1264a3;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1d1c1d;
+  resize: none;
+  overflow-y: auto;
+  font-family: inherit;
+}
+
+.slack-patch-text-before-editable:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(18, 100, 163, 0.2);
+}
+
 .slack-patch-text-after {
   flex: 1;
   padding: 12px;
@@ -221,6 +240,33 @@
 
 .slack-patch-btn-send:hover:not(:disabled) {
   background: #006048;
+}
+
+.slack-patch-btn-proofread {
+  background: #007a5a;
+  color: #fff;
+  border: 1px solid #007a5a;
+}
+
+.slack-patch-btn-proofread:hover:not(:disabled) {
+  background: #006048;
+}
+
+.slack-patch-btn-proofread .shortcut-hint {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+.slack-patch-btn-send-original {
+  background: #1264a3;
+  color: #fff;
+  border: 1px solid #1264a3;
+}
+
+.slack-patch-btn-send-original:hover:not(:disabled) {
+  background: #0f5289;
 }
 
 /* ローディング状態 */

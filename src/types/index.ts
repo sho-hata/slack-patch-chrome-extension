@@ -58,7 +58,7 @@ export type SettingsResponse = {
 };
 
 // モーダルの状態
-export type ModalState = 'loading' | 'ready' | 'error' | 'sending';
+export type ModalState = 'preview' | 'loading' | 'ready' | 'error' | 'sending';
 
 // OpenAI API レスポンス型
 export type OpenAIChatCompletionResponse = {

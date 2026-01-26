@@ -155,17 +155,32 @@ const startProofreadFlow = async (originalText: string): Promise<void> => {
     // モーダルコールバック
     const callbacks: ModalCallbacks = {
       onSend: handleSend,
+      onSendOriginal: () => {
+        if (currentModal) {
+          handleSendOriginal(currentModal.getCurrentOriginalText());
+        }
+      },
       onCancel: handleCancel,
-      onRetry: () => handleRetry(originalText),
-      onPresetChange: (presetId) => handlePresetChange(originalText, presetId),
+      onRetry: () => {
+        if (currentModal) {
+          handleRetry(currentModal.getCurrentOriginalText());
+        }
+      },
+      onPresetChange: (presetId) => {
+        if (currentModal) {
+          handlePresetChange(currentModal.getCurrentOriginalText(), presetId);
+        }
+      },
+      onProofread: () => {
+        if (currentModal) {
+          handleProofread(currentModal.getCurrentOriginalText());
+        }
+      },
     };
 
-    // モーダルを作成・表示
+    // モーダルを作成・表示（preview状態で開く）
     currentModal = new SlackPatchModal(callbacks);
     currentModal.show(originalText, settings);
-
-    // 添削リクエストを送信
-    requestProofread(originalText);
   } catch (error) {
     console.error('[Slack Message Patch] Failed to start proofread flow:', error);
   }
@@ -265,6 +280,38 @@ const handlePresetChange = (originalText: string, presetId: string): void => {
   // 再度添削リクエスト
   currentModal.setLoading();
   requestProofread(originalText, presetId);
+};
+
+/**
+ * 校正開始ハンドラ（preview状態から）
+ */
+const handleProofread = (originalText: string): void => {
+  if (!currentModal) return;
+  currentModal.setLoading();
+  requestProofread(originalText);
+};
+
+/**
+ * そのまま送信ハンドラ（preview状態から）
+ */
+const handleSendOriginal = (originalText: string): void => {
+  if (!currentModal || !currentInputField) return;
+
+  currentModal.setSending();
+
+  // 入力欄に元のテキストを設定
+  const success = setInputText(originalText, currentInputField);
+
+  if (success) {
+    // 少し待ってから送信をトリガー（Slackのstate更新を待つ）
+    setTimeout(() => {
+      triggerSend(currentInputField);
+      closeModal();
+    }, 100);
+  } else {
+    // 設定失敗時はモーダルを閉じてユーザーに知らせる
+    currentModal.setError('テキストの設定に失敗しました。手動でコピー&ペーストしてください。');
+  }
 };
 
 /**
