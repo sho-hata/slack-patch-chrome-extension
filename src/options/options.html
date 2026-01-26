@@ -25,12 +25,17 @@
 
       <!-- API設定 -->
       <section class="section">
-        <h2 class="section-title">API設定</h2>
+        <h2 class="section-title">API設定（オプション）</h2>
+        
+        <div class="optional-notice">
+          <p>LLMによる文章校正機能を使用する場合のみ設定してください。</p>
+          <p class="optional-notice-sub">送信前の確認・編集のみ必要な場合は、APIキーの設定をスキップできます。</p>
+        </div>
         
         <div class="form-group">
           <label class="label" for="api-key">OpenAI APIキー</label>
           <div class="input-with-toggle">
-            <input type="password" id="api-key" class="input" placeholder="sk-..." autocomplete="off">
+            <input type="password" id="api-key" class="input" placeholder="sk-...（未設定でも使用可能）" autocomplete="off">
             <button type="button" id="toggle-api-key" class="toggle-btn" title="表示/非表示">
               <span class="icon-eye">👁</span>
             </button>
@@ -86,11 +91,24 @@
       <!-- 使い方 -->
       <section class="section">
         <h2 class="section-title">使い方</h2>
-        <ol class="usage-list">
-          <li>Web版Slack (app.slack.com) でメッセージを入力</li>
-          <li>設定したショートカットキー（デフォルト: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>）を押す</li>
-          <li>添削結果を確認・編集して「Send」で送信</li>
-        </ol>
+        
+        <div class="usage-mode">
+          <h3 class="usage-mode-title">LLM校正モード（APIキー設定時）</h3>
+          <ol class="usage-list">
+            <li>Web版Slack (app.slack.com) でメッセージを入力</li>
+            <li>設定したショートカットキー（デフォルト: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>）を押す</li>
+            <li>「校正する」で添削 → 結果を確認・編集して「送信」</li>
+          </ol>
+        </div>
+
+        <div class="usage-mode">
+          <h3 class="usage-mode-title">送信前確認モード（APIキー未設定時）</h3>
+          <ol class="usage-list">
+            <li>Web版Slack (app.slack.com) でメッセージを入力</li>
+            <li>設定したショートカットキー（デフォルト: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>）を押す</li>
+            <li>メッセージを確認・編集して「送信」</li>
+          </ol>
+        </div>
       </section>
     </main>
 

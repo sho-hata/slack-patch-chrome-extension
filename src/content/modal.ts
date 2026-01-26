@@ -29,6 +29,7 @@ export class SlackPatchModal {
   private afterTextarea: HTMLTextAreaElement | null = null;
   private disabledInputField: HTMLElement | null = null;
   private inertElements: HTMLElement[] = [];
+  private hasApiKey = false;
 
   // イベントハンドラへの参照（クリーンアップ用）
   private boundEventInterceptor: ((e: Event) => void) | null = null;
@@ -55,6 +56,7 @@ export class SlackPatchModal {
     this.originalText = originalText;
     this.presets = settings.presets;
     this.activePresetId = settings.activePresetId;
+    this.hasApiKey = !!settings.apiKey;
     this.state = 'preview';
 
     // Slackの入力フィールドからフォーカスを外す
@@ -194,11 +196,18 @@ export class SlackPatchModal {
       e.stopImmediatePropagation();
 
       if (this.state === 'preview') {
-        // preview状態: 校正開始（テキストエリアから最新のテキストを取得）
+        // テキストエリアから最新のテキストを取得
         if (this.beforeTextarea) {
           this.originalText = this.beforeTextarea.value;
         }
-        this.callbacks.onProofread();
+
+        if (this.hasApiKey) {
+          // APIキーあり: 校正開始
+          this.callbacks.onProofread();
+        } else {
+          // APIキーなし: 直接送信
+          this.callbacks.onSendOriginal();
+        }
       } else if (this.state === 'ready') {
         // ready状態: 添削後のテキストを送信
         if (this.afterTextarea) {
@@ -419,7 +428,10 @@ export class SlackPatchModal {
     </svg>`;
     closeBtn.addEventListener('click', () => this.callbacks.onCancel());
 
-    actions.appendChild(presetSelect);
+    // APIキーがある場合のみプリセット選択を表示
+    if (this.hasApiKey) {
+      actions.appendChild(presetSelect);
+    }
     actions.appendChild(closeBtn);
     header.appendChild(title);
     header.appendChild(actions);
@@ -546,38 +558,58 @@ export class SlackPatchModal {
     footer.appendChild(status);
 
     if (this.state === 'preview') {
-      // preview状態: 校正するボタン、そのまま送信ボタン、Cancelボタン
-      const proofreadBtn = document.createElement('button');
-      proofreadBtn.className = 'slack-patch-btn slack-patch-btn-proofread';
       const shortcutHint = navigator.platform.includes('Mac') ? 'Cmd+Enter' : 'Ctrl+Enter';
-      proofreadBtn.innerHTML = `校正する <span class="shortcut-hint">${shortcutHint}</span>`;
-      proofreadBtn.addEventListener('click', () => {
-        // テキストエリアから最新のテキストを取得
-        if (this.beforeTextarea) {
-          this.originalText = this.beforeTextarea.value;
-        }
-        this.callbacks.onProofread();
-      });
 
-      const sendOriginalBtn = document.createElement('button');
-      sendOriginalBtn.className = 'slack-patch-btn slack-patch-btn-send-original';
-      sendOriginalBtn.textContent = 'そのまま送信';
-      sendOriginalBtn.addEventListener('click', () => {
-        // テキストエリアから最新のテキストを取得
-        if (this.beforeTextarea) {
-          this.originalText = this.beforeTextarea.value;
-        }
-        this.callbacks.onSendOriginal();
-      });
+      if (this.hasApiKey) {
+        // APIキーあり: 校正するボタン、そのまま送信ボタン、キャンセルボタン
+        const proofreadBtn = document.createElement('button');
+        proofreadBtn.className = 'slack-patch-btn slack-patch-btn-proofread';
+        proofreadBtn.innerHTML = `校正する <span class="shortcut-hint">${shortcutHint}</span>`;
+        proofreadBtn.addEventListener('click', () => {
+          if (this.beforeTextarea) {
+            this.originalText = this.beforeTextarea.value;
+          }
+          this.callbacks.onProofread();
+        });
 
-      const cancelBtn = document.createElement('button');
-      cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-      cancelBtn.textContent = 'キャンセル';
-      cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
+        const sendOriginalBtn = document.createElement('button');
+        sendOriginalBtn.className = 'slack-patch-btn slack-patch-btn-send-original';
+        sendOriginalBtn.textContent = 'そのまま送信';
+        sendOriginalBtn.addEventListener('click', () => {
+          if (this.beforeTextarea) {
+            this.originalText = this.beforeTextarea.value;
+          }
+          this.callbacks.onSendOriginal();
+        });
 
-      footer.appendChild(proofreadBtn);
-      footer.appendChild(sendOriginalBtn);
-      footer.appendChild(cancelBtn);
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
+        cancelBtn.textContent = 'キャンセル';
+        cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
+
+        footer.appendChild(proofreadBtn);
+        footer.appendChild(sendOriginalBtn);
+        footer.appendChild(cancelBtn);
+      } else {
+        // APIキーなし: 送信ボタン、キャンセルボタンのみ（シンプルモード）
+        const sendBtn = document.createElement('button');
+        sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
+        sendBtn.innerHTML = `送信 <span class="shortcut-hint">${shortcutHint}</span>`;
+        sendBtn.addEventListener('click', () => {
+          if (this.beforeTextarea) {
+            this.originalText = this.beforeTextarea.value;
+          }
+          this.callbacks.onSendOriginal();
+        });
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
+        cancelBtn.textContent = 'キャンセル';
+        cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
+
+        footer.appendChild(sendBtn);
+        footer.appendChild(cancelBtn);
+      }
     } else {
       // ready/loading/error/sending状態: 既存のボタン
       // コピーボタン

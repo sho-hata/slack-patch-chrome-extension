@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Slack Message Patch",
   "version": "1.0.0",
-  "description": "Web版Slackで送信前メッセージをLLMで添削し、Before/After比較で編集・送信できる拡張機能",
+  "description": "Web版Slackで送信前メッセージを確認・編集。オプションでLLMによる文章校正も可能",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://app.slack.com/*", "https://api.openai.com/*"],
   "background": {
