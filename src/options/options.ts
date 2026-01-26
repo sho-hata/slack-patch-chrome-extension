@@ -3,8 +3,8 @@
  * 設定画面のロジック
  */
 
-import type { Preset, StorageData } from '@/types';
-import { AVAILABLE_MODELS, DEFAULT_PRESETS } from '@/utils/constants';
+import type { Preset, ShortcutConfig, StorageData } from '@/types';
+import { AVAILABLE_MODELS, DEFAULT_PRESETS, DEFAULT_SHORTCUT } from '@/utils/constants';
 import {
   addPreset,
   deletePreset,
@@ -18,6 +18,8 @@ import {
 let apiKeyInput: HTMLInputElement;
 let toggleApiKeyBtn: HTMLButtonElement;
 let modelSelect: HTMLSelectElement;
+let shortcutInput: HTMLInputElement;
+let resetShortcutBtn: HTMLButtonElement;
 let activePresetSelect: HTMLSelectElement;
 let presetList: HTMLDivElement;
 let addPresetBtn: HTMLButtonElement;
@@ -42,6 +44,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
   toggleApiKeyBtn = document.getElementById('toggle-api-key') as HTMLButtonElement;
   modelSelect = document.getElementById('model') as HTMLSelectElement;
+  shortcutInput = document.getElementById('shortcut-input') as HTMLInputElement;
+  resetShortcutBtn = document.getElementById('reset-shortcut') as HTMLButtonElement;
   activePresetSelect = document.getElementById('active-preset') as HTMLSelectElement;
   presetList = document.getElementById('preset-list') as HTMLDivElement;
   addPresetBtn = document.getElementById('add-preset') as HTMLButtonElement;
@@ -90,9 +94,45 @@ const loadSettings = async (): Promise<void> => {
   // モデル
   modelSelect.value = currentSettings.model;
 
+  // ショートカット
+  updateShortcutDisplay();
+
   // プリセット
   renderPresetList();
   updateActivePresetSelect();
+};
+
+/**
+ * ショートカット表示を更新
+ */
+const updateShortcutDisplay = (): void => {
+  const shortcut = currentSettings.shortcut || DEFAULT_SHORTCUT;
+  shortcutInput.value = formatShortcut(shortcut);
+};
+
+/**
+ * ショートカットを文字列にフォーマット
+ */
+const formatShortcut = (shortcut: ShortcutConfig): string => {
+  const parts: string[] = [];
+
+  if (shortcut.ctrlKey || shortcut.metaKey) {
+    parts.push('Cmd/Ctrl');
+  }
+  if (shortcut.altKey) {
+    parts.push('Alt');
+  }
+  if (shortcut.shiftKey) {
+    parts.push('Shift');
+  }
+
+  // キー名を読みやすく
+  let keyName = shortcut.key;
+  if (keyName === ' ') keyName = 'Space';
+
+  parts.push(keyName);
+
+  return parts.join(' + ');
 };
 
 /**
@@ -162,6 +202,56 @@ const setupEventListeners = (): void => {
     await setStorageData({ model: modelSelect.value });
     currentSettings.model = modelSelect.value;
     showToast('モデルを保存しました');
+  });
+
+  // ショートカット設定
+  shortcutInput.addEventListener('focus', () => {
+    shortcutInput.classList.add('recording');
+    shortcutInput.value = 'キーを押してください...';
+  });
+
+  shortcutInput.addEventListener('blur', () => {
+    shortcutInput.classList.remove('recording');
+    updateShortcutDisplay();
+  });
+
+  shortcutInput.addEventListener('keydown', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 単独の修飾キーは無視
+    if (['Control', 'Meta', 'Alt', 'Shift'].includes(e.key)) {
+      return;
+    }
+
+    // Escapeでキャンセル
+    if (e.key === 'Escape') {
+      shortcutInput.blur();
+      return;
+    }
+
+    const newShortcut: ShortcutConfig = {
+      key: e.key,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey,
+      altKey: e.altKey,
+      shiftKey: e.shiftKey,
+    };
+
+    await setStorageData({ shortcut: newShortcut });
+    currentSettings.shortcut = newShortcut;
+    shortcutInput.classList.remove('recording');
+    updateShortcutDisplay();
+    showToast('ショートカットを保存しました');
+    shortcutInput.blur();
+  });
+
+  // ショートカットリセット
+  resetShortcutBtn.addEventListener('click', async () => {
+    await setStorageData({ shortcut: DEFAULT_SHORTCUT });
+    currentSettings.shortcut = DEFAULT_SHORTCUT;
+    updateShortcutDisplay();
+    showToast('ショートカットをリセットしました');
   });
 
   // アクティブプリセット変更

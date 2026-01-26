@@ -137,6 +137,36 @@ body {
   flex: 1;
 }
 
+/* ショートカット入力 */
+.shortcut-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.shortcut-input {
+  flex: 1;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-align: center;
+  font-weight: 500;
+}
+
+.shortcut-input:focus {
+  border-color: #007a5a;
+  box-shadow: 0 0 0 3px rgba(0, 122, 90, 0.15);
+}
+
+.shortcut-input.recording {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .toggle-btn {
   padding: 8px 12px;
   border: 1px solid #d1d5da;

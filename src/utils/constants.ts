@@ -1,4 +1,4 @@
-import type { Preset, StorageData } from '@/types';
+import type { Preset, ShortcutConfig, StorageData } from '@/types';
 
 // デフォルトプリセット
 export const DEFAULT_PRESETS: Preset[] = [
@@ -20,12 +20,22 @@ export const DEFAULT_PRESETS: Preset[] = [
   },
 ];
 
+// デフォルトショートカット設定
+export const DEFAULT_SHORTCUT: ShortcutConfig = {
+  key: 'Enter',
+  ctrlKey: false,
+  metaKey: true, // Cmd on Mac
+  altKey: false,
+  shiftKey: false,
+};
+
 // デフォルト設定
 export const DEFAULT_STORAGE_DATA: StorageData = {
   apiKey: '',
   model: 'gpt-4o-mini',
   presets: DEFAULT_PRESETS,
   activePresetId: 'business-proofreading',
+  shortcut: DEFAULT_SHORTCUT,
 };
 
 // 利用可能なモデル

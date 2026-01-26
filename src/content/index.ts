@@ -75,17 +75,46 @@ const loadSettings = async (): Promise<StorageData> => {
 };
 
 /**
+ * ショートカットキーが一致するかチェック
+ */
+const isShortcutMatch = (event: KeyboardEvent): boolean => {
+  if (!cachedSettings?.shortcut) {
+    // デフォルト: Cmd/Ctrl + Enter
+    return (event.metaKey || event.ctrlKey) && event.key === 'Enter' && !event.shiftKey;
+  }
+
+  const shortcut = cachedSettings.shortcut;
+
+  // キーが一致するか
+  if (event.key !== shortcut.key) return false;
+
+  // Ctrl/Cmdは OR 条件（どちらかが設定されていればどちらでも可）
+  const ctrlOrMeta = shortcut.ctrlKey || shortcut.metaKey;
+  if (ctrlOrMeta) {
+    if (!event.ctrlKey && !event.metaKey) return false;
+  } else {
+    // どちらも設定されていない場合は、どちらも押されていないことを確認
+    if (event.ctrlKey || event.metaKey) return false;
+  }
+
+  // Alt キー
+  if (shortcut.altKey !== event.altKey) return false;
+
+  // Shift キー
+  if (shortcut.shiftKey !== event.shiftKey) return false;
+
+  return true;
+};
+
+/**
  * キーダウンイベントハンドラ
  */
 const handleKeyDown = (event: KeyboardEvent): void => {
   // IME変換中は無視
   if (event.isComposing) return;
 
-  // Cmd/Ctrl + Enter の検出
-  const isModifierPressed = event.metaKey || event.ctrlKey;
-  const isEnter = event.key === 'Enter';
-
-  if (isModifierPressed && isEnter && !event.shiftKey) {
+  // ショートカットキーの検出
+  if (isShortcutMatch(event)) {
     // モーダルが既に開いている場合は無視
     if (currentModal) return;
 

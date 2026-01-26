@@ -48,6 +48,20 @@
         </div>
       </section>
 
+      <!-- ショートカット設定 -->
+      <section class="section">
+        <h2 class="section-title">ショートカット設定</h2>
+        
+        <div class="form-group">
+          <label class="label" for="shortcut-input">添削を実行するショートカットキー</label>
+          <div class="shortcut-input-container">
+            <input type="text" id="shortcut-input" class="input shortcut-input" readonly placeholder="クリックしてキーを押してください">
+            <button type="button" id="reset-shortcut" class="btn btn-secondary">リセット</button>
+          </div>
+          <p class="help-text">入力欄をクリックして、使用したいショートカットキーを押してください</p>
+        </div>
+      </section>
+
       <!-- プリセット設定 -->
       <section class="section">
         <h2 class="section-title">プロンプトプリセット</h2>
@@ -57,7 +71,7 @@
           <select id="active-preset" class="select">
             <!-- JavaScriptで動的に生成 -->
           </select>
-          <p class="help-text">Cmd/Ctrl+Enter で添削する際に使用されるプリセット</p>
+          <p class="help-text">設定したショートカットで添削する際に使用されるプリセット</p>
         </div>
 
         <div class="preset-list" id="preset-list">
@@ -74,7 +88,7 @@
         <h2 class="section-title">使い方</h2>
         <ol class="usage-list">
           <li>Web版Slack (app.slack.com) でメッセージを入力</li>
-          <li><kbd>Cmd</kbd>+<kbd>Enter</kbd> (Mac) または <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (Windows/Linux) を押す</li>
+          <li>設定したショートカットキー（デフォルト: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>）を押す</li>
           <li>添削結果を確認・編集して「Send」で送信</li>
         </ol>
       </section>

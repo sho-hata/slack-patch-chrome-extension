@@ -6,12 +6,22 @@ export type Preset = {
   userPromptTemplate: string;
 };
 
+// ショートカット設定
+export type ShortcutConfig = {
+  key: string; // 'Enter', 'Space', etc.
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+  shiftKey: boolean;
+};
+
 // ストレージデータ構造
 export type StorageData = {
   apiKey: string;
   model: string;
   presets: Preset[];
   activePresetId: string;
+  shortcut: ShortcutConfig;
 };
 
 // Content Script → Service Worker メッセージ
