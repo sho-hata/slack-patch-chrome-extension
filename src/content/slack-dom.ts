@@ -153,9 +153,49 @@ const extractTextWithFormatting = (node: Node): string => {
         return '\n';
 
       // 絵文字
-      case 'IMG':
-        // data-stringify-emoji属性を優先、なければalt属性を使用
-        return el.dataset.stringifyEmoji || el.getAttribute('alt') || '';
+      case 'IMG': {
+        // data-stringify-emoji属性を優先
+        if (el.dataset.stringifyEmoji) {
+          return el.dataset.stringifyEmoji;
+        }
+
+        // aria-label属性をチェック（:emoji: 形式の場合あり）
+        const ariaLabel = el.getAttribute('aria-label');
+        if (ariaLabel) {
+          // 既に :emoji: 形式の場合はそのまま返す
+          if (ariaLabel.startsWith(':') && ariaLabel.endsWith(':')) {
+            return ariaLabel;
+          }
+          // 「emoji 絵文字」形式の場合は :emoji: に変換
+          const emojiMatch = ariaLabel.match(/^(.+?)(?:\s+絵文字)?$/);
+          if (emojiMatch) {
+            return `:${emojiMatch[1]}:`;
+          }
+        }
+
+        // alt属性をチェック
+        const alt = el.getAttribute('alt');
+        if (alt) {
+          // 既に :emoji: 形式の場合はそのまま返す
+          if (alt.startsWith(':') && alt.endsWith(':')) {
+            return alt;
+          }
+          // 「emoji 絵文字」形式の場合は :emoji: に変換
+          const altMatch = alt.match(/^(.+?)(?:\s+絵文字)?$/);
+          if (altMatch) {
+            return `:${altMatch[1]}:`;
+          }
+          return `:${alt}:`;
+        }
+
+        // data-emoji属性もチェック
+        const dataEmoji = el.dataset.emoji;
+        if (dataEmoji) {
+          return `:${dataEmoji}:`;
+        }
+
+        return '';
+      }
 
       // リンク
       case 'A': {
