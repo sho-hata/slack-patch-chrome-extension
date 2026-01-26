@@ -187,10 +187,36 @@ export class SlackPatchModal {
       return;
     }
 
-    // Cmd+Enter または Ctrl+Enter の検出
     const isModifierPressed = e.metaKey || e.ctrlKey;
     const isEnter = e.key === 'Enter';
 
+    // Enter（修飾キーなし）での送信
+    if (isEnter && !isModifierPressed && !e.shiftKey) {
+      if (this.state === 'preview') {
+        // preview状態: そのまま送信
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (this.beforeTextarea) {
+          this.originalText = this.beforeTextarea.value;
+        }
+        this.callbacks.onSendOriginal();
+        return;
+      }
+      if (this.state === 'ready') {
+        // ready状態: 添削後のテキストを送信
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (this.afterTextarea) {
+          this.proofreadText = this.afterTextarea.value;
+        }
+        this.callbacks.onSend(this.proofreadText);
+        return;
+      }
+    }
+
+    // Cmd+Enter または Ctrl+Enter の検出
     if (isModifierPressed && isEnter && !e.shiftKey) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -574,7 +600,7 @@ export class SlackPatchModal {
 
         const sendOriginalBtn = document.createElement('button');
         sendOriginalBtn.className = 'slack-patch-btn slack-patch-btn-send-original';
-        sendOriginalBtn.textContent = 'そのまま送信';
+        sendOriginalBtn.innerHTML = 'そのまま送信 <span class="shortcut-hint">Enter</span>';
         sendOriginalBtn.addEventListener('click', () => {
           if (this.beforeTextarea) {
             this.originalText = this.beforeTextarea.value;
@@ -584,7 +610,7 @@ export class SlackPatchModal {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-        cancelBtn.textContent = 'キャンセル';
+        cancelBtn.innerHTML = 'キャンセル <span class="shortcut-hint">Esc</span>';
         cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
         footer.appendChild(proofreadBtn);
@@ -594,7 +620,7 @@ export class SlackPatchModal {
         // APIキーなし: 送信ボタン、キャンセルボタンのみ（シンプルモード）
         const sendBtn = document.createElement('button');
         sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
-        sendBtn.innerHTML = `送信 <span class="shortcut-hint">${shortcutHint}</span>`;
+        sendBtn.innerHTML = `送信 <span class="shortcut-hint">Enter</span>`;
         sendBtn.addEventListener('click', () => {
           if (this.beforeTextarea) {
             this.originalText = this.beforeTextarea.value;
@@ -604,7 +630,7 @@ export class SlackPatchModal {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-        cancelBtn.textContent = 'キャンセル';
+        cancelBtn.innerHTML = 'キャンセル <span class="shortcut-hint">Esc</span>';
         cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
         footer.appendChild(sendBtn);
@@ -630,14 +656,15 @@ export class SlackPatchModal {
       // キャンセルボタン
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.innerHTML = 'キャンセル <span class="shortcut-hint">Esc</span>';
       cancelBtn.disabled = this.state === 'sending';
       cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
       // 送信ボタン
       const sendBtn = document.createElement('button');
       sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
-      sendBtn.textContent = this.state === 'sending' ? '送信中...' : '送信';
+      sendBtn.innerHTML =
+        this.state === 'sending' ? '送信中...' : '送信 <span class="shortcut-hint">Enter</span>';
       sendBtn.disabled = this.state !== 'ready';
       sendBtn.addEventListener('click', () => {
         this.callbacks.onSend(this.proofreadText);
