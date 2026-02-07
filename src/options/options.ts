@@ -4,11 +4,7 @@
  */
 
 import type { Preset, ShortcutConfig, StorageData } from '@/types';
-import {
-  AVAILABLE_MODELS,
-  DEFAULT_PRESETS,
-  DEFAULT_SHORTCUT,
-} from '@/utils/constants';
+import { AVAILABLE_MODELS, DEFAULT_PRESETS, DEFAULT_SHORTCUT } from '@/utils/constants';
 import {
   addPreset,
   deletePreset,
@@ -41,17 +37,11 @@ let currentSettings: StorageData;
 
 document.addEventListener('DOMContentLoaded', async () => {
   apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
-  toggleApiKeyBtn = document.getElementById(
-    'toggle-api-key',
-  ) as HTMLButtonElement;
+  toggleApiKeyBtn = document.getElementById('toggle-api-key') as HTMLButtonElement;
   modelSelect = document.getElementById('model') as HTMLSelectElement;
   shortcutInput = document.getElementById('shortcut-input') as HTMLInputElement;
-  resetShortcutBtn = document.getElementById(
-    'reset-shortcut',
-  ) as HTMLButtonElement;
-  activePresetSelect = document.getElementById(
-    'active-preset',
-  ) as HTMLSelectElement;
+  resetShortcutBtn = document.getElementById('reset-shortcut') as HTMLButtonElement;
+  activePresetSelect = document.getElementById('active-preset') as HTMLSelectElement;
   presetList = document.getElementById('preset-list') as HTMLDivElement;
   addPresetBtn = document.getElementById('add-preset') as HTMLButtonElement;
 
@@ -59,18 +49,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   modalTitle = document.getElementById('modal-title') as HTMLHeadingElement;
   presetIdInput = document.getElementById('preset-id') as HTMLInputElement;
   presetNameInput = document.getElementById('preset-name') as HTMLInputElement;
-  presetSystemInput = document.getElementById(
-    'preset-system',
-  ) as HTMLTextAreaElement;
-  presetUserInput = document.getElementById(
-    'preset-user',
-  ) as HTMLTextAreaElement;
-  deletePresetBtn = document.getElementById(
-    'delete-preset',
-  ) as HTMLButtonElement;
-  cancelPresetBtn = document.getElementById(
-    'cancel-preset',
-  ) as HTMLButtonElement;
+  presetSystemInput = document.getElementById('preset-system') as HTMLTextAreaElement;
+  presetUserInput = document.getElementById('preset-user') as HTMLTextAreaElement;
+  deletePresetBtn = document.getElementById('delete-preset') as HTMLButtonElement;
+  cancelPresetBtn = document.getElementById('cancel-preset') as HTMLButtonElement;
   savePresetBtn = document.getElementById('save-preset') as HTMLButtonElement;
 
   populateModelSelect();
@@ -164,9 +146,7 @@ const setupEventListeners = (): void => {
   toggleApiKeyBtn.addEventListener('click', () => {
     const isPassword = apiKeyInput.type === 'password';
     apiKeyInput.type = isPassword ? 'text' : 'password';
-    toggleApiKeyBtn.querySelector('.icon-eye')!.textContent = isPassword
-      ? '🙈'
-      : '👁';
+    toggleApiKeyBtn.querySelector('.icon-eye')!.textContent = isPassword ? '🙈' : '👁';
   });
 
   apiKeyInput.addEventListener('change', async () => {
@@ -245,12 +225,8 @@ const setupEventListeners = (): void => {
     openPresetModal();
   });
 
-  presetModal
-    .querySelector('.modal-overlay')
-    ?.addEventListener('click', closePresetModal);
-  document
-    .getElementById('modal-close')
-    ?.addEventListener('click', closePresetModal);
+  presetModal.querySelector('.modal-overlay')?.addEventListener('click', closePresetModal);
+  document.getElementById('modal-close')?.addEventListener('click', closePresetModal);
   cancelPresetBtn.addEventListener('click', closePresetModal);
   savePresetBtn.addEventListener('click', savePresetFromModal);
   deletePresetBtn.addEventListener('click', deletePresetFromModal);
@@ -263,9 +239,7 @@ const setupEventListeners = (): void => {
 };
 
 const openPresetModal = (presetId?: string): void => {
-  const preset = presetId
-    ? currentSettings.presets.find((p) => p.id === presetId)
-    : null;
+  const preset = presetId ? currentSettings.presets.find((p) => p.id === presetId) : null;
 
   if (preset) {
     modalTitle.textContent = 'プリセットを編集';
@@ -361,10 +335,7 @@ const deletePresetFromModal = async (): Promise<void> => {
   currentSettings.presets = currentSettings.presets.filter((p) => p.id !== id);
 
   // 削除したのがアクティブなプリセットだった場合
-  if (
-    currentSettings.activePresetId === id &&
-    currentSettings.presets.length > 0
-  ) {
+  if (currentSettings.activePresetId === id && currentSettings.presets.length > 0) {
     currentSettings.activePresetId = currentSettings.presets[0].id;
   }
 

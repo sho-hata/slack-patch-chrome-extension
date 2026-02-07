@@ -52,9 +52,7 @@ export type ProofreadErrorResponse = {
     | 'PRIVATE_CONVERSATION';
 };
 
-export type ProofreadResponse =
-  | ProofreadSuccessResponse
-  | ProofreadErrorResponse;
+export type ProofreadResponse = ProofreadSuccessResponse | ProofreadErrorResponse;
 
 export type ContentSettings = {
   hasApiKey: boolean;

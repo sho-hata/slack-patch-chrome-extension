@@ -54,18 +54,13 @@ export const findActiveInputField = (): HTMLElement | null => {
 
 const isValidInputField = (element: HTMLElement): boolean => {
   return (
-    element.getAttribute('contenteditable') === 'true' &&
-    !element.closest('[aria-hidden="true"]')
+    element.getAttribute('contenteditable') === 'true' && !element.closest('[aria-hidden="true"]')
   );
 };
 
 const isVisible = (element: HTMLElement): boolean => {
   const style = window.getComputedStyle(element);
-  return (
-    style.display !== 'none' &&
-    style.visibility !== 'hidden' &&
-    style.opacity !== '0'
-  );
+  return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
 };
 
 /**
@@ -117,9 +112,7 @@ const extractTextWithFormatting = (node: Node): string => {
       return `\`\`\`\n${codeContent}\n\`\`\``;
     }
 
-    const inner = Array.from(el.childNodes)
-      .map(extractTextWithFormatting)
-      .join('');
+    const inner = Array.from(el.childNodes).map(extractTextWithFormatting).join('');
 
     switch (tag) {
       case 'B':
@@ -147,7 +140,7 @@ const extractTextWithFormatting = (node: Node): string => {
 
       case 'BLOCKQUOTE': {
         const lines = inner.split('\n').filter((line) => line.trim() !== '');
-        return lines.map((line) => `> ${line}`).join('\n') + '\n';
+        return `${lines.map((line) => `> ${line}`).join('\n')}\n`;
       }
 
       case 'BR':
@@ -156,16 +149,12 @@ const extractTextWithFormatting = (node: Node): string => {
       case 'IMG': {
         // data-stringify-text属性を優先（Slackの絵文字ショートコード）
         const stringifyText = el.getAttribute('data-stringify-text');
-        if (
-          stringifyText &&
-          stringifyText.startsWith(':') &&
-          stringifyText.endsWith(':')
-        ) {
+        if (stringifyText?.startsWith(':') && stringifyText.endsWith(':')) {
           return stringifyText;
         }
 
         const dataId = el.getAttribute('data-id');
-        if (dataId && dataId.startsWith(':') && dataId.endsWith(':')) {
+        if (dataId?.startsWith(':') && dataId.endsWith(':')) {
           return dataId;
         }
 
@@ -267,7 +256,7 @@ const findEarliestMatch = (text: string): PatternMatch | null => {
   if (matches.length === 0) return null;
 
   return matches.reduce((earliest, current) =>
-    current.index < earliest.index ? current : earliest,
+    current.index < earliest.index ? current : earliest
   );
 };
 
@@ -285,9 +274,7 @@ const parseSlackMarkdownLine = (line: string): DocumentFragment => {
 
     if (earliestMatch) {
       if (earliestMatch.index > 0) {
-        fragment.appendChild(
-          document.createTextNode(remaining.substring(0, earliestMatch.index)),
-        );
+        fragment.appendChild(document.createTextNode(remaining.substring(0, earliestMatch.index)));
       }
 
       const el = document.createElement(earliestMatch.tag);
@@ -297,9 +284,7 @@ const parseSlackMarkdownLine = (line: string): DocumentFragment => {
       }
       fragment.appendChild(el);
 
-      remaining = remaining.substring(
-        earliestMatch.index + earliestMatch.length,
-      );
+      remaining = remaining.substring(earliestMatch.index + earliestMatch.length);
     } else {
       fragment.appendChild(document.createTextNode(remaining));
       break;
@@ -356,10 +341,7 @@ const processInlineText = (text: string, fragment: DocumentFragment): void => {
       const blockquote = document.createElement('blockquote');
       const quoteLines: string[] = [];
 
-      while (
-        i < lines.length &&
-        (lines[i].startsWith('> ') || lines[i] === '>')
-      ) {
+      while (i < lines.length && (lines[i].startsWith('> ') || lines[i] === '>')) {
         const content = lines[i].startsWith('> ') ? lines[i].substring(2) : '';
         quoteLines.push(content);
         i++;
@@ -392,10 +374,7 @@ const processInlineText = (text: string, fragment: DocumentFragment): void => {
 /**
  * 入力欄にテキストを設定（Slackマークダウン対応）
  */
-export const setInputText = (
-  text: string,
-  inputField?: HTMLElement | null,
-): boolean => {
+export const setInputText = (text: string, inputField?: HTMLElement | null): boolean => {
   const field = inputField || findActiveInputField();
   if (!field) return false;
 
@@ -425,7 +404,7 @@ const dispatchInputEvents = (element: HTMLElement): void => {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
-    }),
+    })
   );
 
   element.dispatchEvent(
@@ -433,14 +412,14 @@ const dispatchInputEvents = (element: HTMLElement): void => {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
-    }),
+    })
   );
 
   element.dispatchEvent(
     new Event('change', {
       bubbles: true,
       cancelable: true,
-    }),
+    })
   );
 };
 
@@ -509,7 +488,7 @@ const findSendButton = (inputField: HTMLElement): HTMLElement | null => {
  * 入力欄が再生成された場合に対応
  */
 export const observeInputField = (
-  callback: (inputField: HTMLElement) => void,
+  callback: (inputField: HTMLElement) => void
 ): MutationObserver => {
   const observer = new MutationObserver(() => {
     const inputField = findActiveInputField();

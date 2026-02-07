@@ -20,9 +20,7 @@ export async function getStorageData(): Promise<StorageData> {
   });
 }
 
-export async function setStorageData(
-  data: Partial<StorageData>,
-): Promise<void> {
+export async function setStorageData(data: Partial<StorageData>): Promise<void> {
   const current = await getStorageData();
   const updated = { ...current, ...data };
 
@@ -62,14 +60,9 @@ export async function addPreset(preset: Preset): Promise<void> {
   });
 }
 
-export async function updatePreset(
-  presetId: string,
-  updates: Partial<Preset>,
-): Promise<void> {
+export async function updatePreset(presetId: string, updates: Partial<Preset>): Promise<void> {
   const data = await getStorageData();
-  const presets = data.presets.map((p) =>
-    p.id === presetId ? { ...p, ...updates } : p,
-  );
+  const presets = data.presets.map((p) => (p.id === presetId ? { ...p, ...updates } : p));
   await setStorageData({ presets });
 }
 

@@ -1,9 +1,4 @@
-import type {
-  ContentSettings,
-  Preset,
-  ShortcutConfig,
-  StorageData,
-} from '@/types';
+import type { ContentSettings, Preset, ShortcutConfig, StorageData } from '@/types';
 
 export const DEFAULT_PRESETS: Preset[] = [
   {

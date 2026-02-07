@@ -82,7 +82,7 @@ export class SlackPatchModal {
     }
 
     const inputContainers = document.querySelectorAll<HTMLElement>(
-      '[data-qa="message_input"], [data-qa="message-input"], .p-message_input, .c-wysiwyg_container',
+      '[data-qa="message_input"], [data-qa="message-input"], .p-message_input, .c-wysiwyg_container'
     );
     for (const container of inputContainers) {
       if (!container.hasAttribute('inert')) {
@@ -92,7 +92,7 @@ export class SlackPatchModal {
     }
 
     const editableElements = document.querySelectorAll<HTMLElement>(
-      '[contenteditable="true"]:not([data-slack-patch-modal])',
+      '[contenteditable="true"]:not([data-slack-patch-modal])'
     );
     for (const el of editableElements) {
       if (!el.hasAttribute('inert') && !this.shadowRoot.contains(el)) {
@@ -121,9 +121,7 @@ export class SlackPatchModal {
   private isEventFromModal(e: Event): boolean {
     const path = e.composedPath();
     return path.some(
-      (el) =>
-        el === this.container ||
-        (el instanceof Node && this.shadowRoot.contains(el)),
+      (el) => el === this.container || (el instanceof Node && this.shadowRoot.contains(el))
     );
   }
 
@@ -213,11 +211,7 @@ export class SlackPatchModal {
     if (this.boundEventInterceptor) {
       const eventTypes = ['keydown', 'keyup', 'keypress'];
       for (const eventType of eventTypes) {
-        document.removeEventListener(
-          eventType,
-          this.boundEventInterceptor,
-          true,
-        );
+        document.removeEventListener(eventType, this.boundEventInterceptor, true);
       }
       this.boundEventInterceptor = null;
     }
@@ -241,18 +235,12 @@ export class SlackPatchModal {
       }
     };
 
-    this.shadowRoot.addEventListener(
-      'focusout',
-      this.boundFocusOutHandler as EventListener,
-    );
+    this.shadowRoot.addEventListener('focusout', this.boundFocusOutHandler as EventListener);
   }
 
   private removeFocusOutPrevention(): void {
     if (this.boundFocusOutHandler) {
-      this.shadowRoot.removeEventListener(
-        'focusout',
-        this.boundFocusOutHandler as EventListener,
-      );
+      this.shadowRoot.removeEventListener('focusout', this.boundFocusOutHandler as EventListener);
       this.boundFocusOutHandler = null;
     }
   }
@@ -297,14 +285,13 @@ export class SlackPatchModal {
   setSending(): void {
     this.state = 'sending';
 
-    const buttons =
-      this.shadowRoot.querySelectorAll<HTMLButtonElement>('.slack-patch-btn');
+    const buttons = this.shadowRoot.querySelectorAll<HTMLButtonElement>('.slack-patch-btn');
     for (const btn of buttons) {
       btn.disabled = true;
     }
 
     const presetSelect = this.shadowRoot.querySelector<HTMLSelectElement>(
-      '.slack-patch-preset-select',
+      '.slack-patch-preset-select'
     );
     if (presetSelect) {
       presetSelect.disabled = true;
@@ -317,9 +304,7 @@ export class SlackPatchModal {
       this.afterTextarea.disabled = true;
     }
 
-    const status = this.shadowRoot.querySelector<HTMLElement>(
-      '.slack-patch-status',
-    );
+    const status = this.shadowRoot.querySelector<HTMLElement>('.slack-patch-status');
     if (status) {
       status.textContent = '送信中...';
     }
@@ -388,8 +373,7 @@ export class SlackPatchModal {
 
     const presetSelect = document.createElement('select');
     presetSelect.className = 'slack-patch-preset-select';
-    presetSelect.disabled =
-      this.state === 'loading' || this.state === 'sending';
+    presetSelect.disabled = this.state === 'loading' || this.state === 'sending';
 
     for (const preset of this.presets) {
       const option = document.createElement('option');
@@ -529,9 +513,7 @@ export class SlackPatchModal {
     footer.appendChild(status);
 
     if (this.state === 'preview') {
-      const shortcutHint = navigator.platform.includes('Mac')
-        ? 'Cmd+Enter'
-        : 'Ctrl+Enter';
+      const shortcutHint = navigator.platform.includes('Mac') ? 'Cmd+Enter' : 'Ctrl+Enter';
 
       if (this.hasApiKey) {
         const proofreadBtn = document.createElement('button');
@@ -545,10 +527,8 @@ export class SlackPatchModal {
         });
 
         const sendOriginalBtn = document.createElement('button');
-        sendOriginalBtn.className =
-          'slack-patch-btn slack-patch-btn-send-original';
-        sendOriginalBtn.innerHTML =
-          'そのまま送信 <span class="shortcut-hint">Enter</span>';
+        sendOriginalBtn.className = 'slack-patch-btn slack-patch-btn-send-original';
+        sendOriginalBtn.innerHTML = 'そのまま送信 <span class="shortcut-hint">Enter</span>';
         sendOriginalBtn.addEventListener('click', () => {
           if (this.beforeTextarea) {
             this.originalText = this.beforeTextarea.value;
@@ -558,8 +538,7 @@ export class SlackPatchModal {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-        cancelBtn.innerHTML =
-          'キャンセル <span class="shortcut-hint">Esc</span>';
+        cancelBtn.innerHTML = 'キャンセル <span class="shortcut-hint">Esc</span>';
         cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
         footer.appendChild(proofreadBtn);
@@ -579,8 +558,7 @@ export class SlackPatchModal {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'slack-patch-btn slack-patch-btn-cancel';
-        cancelBtn.innerHTML =
-          'キャンセル <span class="shortcut-hint">Esc</span>';
+        cancelBtn.innerHTML = 'キャンセル <span class="shortcut-hint">Esc</span>';
         cancelBtn.addEventListener('click', () => this.callbacks.onCancel());
 
         footer.appendChild(sendBtn);
@@ -596,9 +574,7 @@ export class SlackPatchModal {
       const sendBtn = document.createElement('button');
       sendBtn.className = 'slack-patch-btn slack-patch-btn-send';
       sendBtn.innerHTML =
-        this.state === 'sending'
-          ? '送信中...'
-          : '送信 <span class="shortcut-hint">Enter</span>';
+        this.state === 'sending' ? '送信中...' : '送信 <span class="shortcut-hint">Enter</span>';
       sendBtn.disabled = this.state !== 'ready';
       sendBtn.addEventListener('click', () => {
         this.callbacks.onSend(this.proofreadText);
@@ -613,7 +589,7 @@ export class SlackPatchModal {
 
   private setupFocusTrap(modal: HTMLElement): void {
     const focusableElements = modal.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      'button:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
 
     if (focusableElements.length === 0) return;
@@ -645,7 +621,7 @@ export class SlackPatchModal {
         this.beforeTextarea.focus();
         this.beforeTextarea.setSelectionRange(
           this.beforeTextarea.value.length,
-          this.beforeTextarea.value.length,
+          this.beforeTextarea.value.length
         );
       } else {
         firstElement.focus();
