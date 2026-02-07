@@ -14,7 +14,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "ci": "pnpm typecheck && pnpm lint && pnpm build"
+    "ci": "pnpm typecheck && pnpm lint && pnpm build",
+    "zip": "pnpm build && cd dist && zip -r ../slack-patch-extension.zip ."
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
