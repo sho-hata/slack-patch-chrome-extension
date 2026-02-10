@@ -3,7 +3,7 @@
   "name": "Slack Message Patch",
   "version": "1.0.0",
   "description": "Web版Slackで送信前メッセージを確認・編集。オプションでLLMによる文章校正も可能",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage"],
   "host_permissions": ["https://api.openai.com/*"],
   "background": {
     "service_worker": "src/background/service-worker.ts",
